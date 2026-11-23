@@ -1,6 +1,6 @@
-eu.kalafatic.dcode:eu.kalafatic.dcode.client:eclipse-plugin:lib/jackson-annotations-2.20.jar @ /home/petr/git/DCode-121126/plugins/eu.kalafatic.dcode.client/target/eu.kalafatic.dcode.client-2.6.11-SNAPSHOT.jar
-eu.kalafatic.dcode:eu.kalafatic.dcode.client:eclipse-plugin:lib/jackson-core-2.20.0.jar @ /home/petr/git/DCode-121126/plugins/eu.kalafatic.dcode.client/target/eu.kalafatic.dcode.client-2.6.11-SNAPSHOT.jar
-eu.kalafatic.dcode:eu.kalafatic.dcode.client:eclipse-plugin:lib/jackson-databind-2.20.0.jar @ /home/petr/git/DCode-121126/plugins/eu.kalafatic.dcode.client/target/eu.kalafatic.dcode.client-2.6.11-SNAPSHOT.jar
+eu.kalafatic.dcode:eu.kalafatic.dcode.client:eclipse-plugin:lib/jackson-annotations-2.20.jar @ /home/petr/git/evo-code-221126/plugins/eu.kalafatic.dcode.client/target/eu.kalafatic.dcode.client-2.6.11-SNAPSHOT.jar
+eu.kalafatic.dcode:eu.kalafatic.dcode.client:eclipse-plugin:lib/jackson-core-2.20.0.jar @ /home/petr/git/evo-code-221126/plugins/eu.kalafatic.dcode.client/target/eu.kalafatic.dcode.client-2.6.11-SNAPSHOT.jar
+eu.kalafatic.dcode:eu.kalafatic.dcode.client:eclipse-plugin:lib/jackson-databind-2.20.0.jar @ /home/petr/git/evo-code-221126/plugins/eu.kalafatic.dcode.client/target/eu.kalafatic.dcode.client-2.6.11-SNAPSHOT.jar
 p2.eclipse.plugin:com.sun.jna:eclipse-plugin @ /home/petr/.m2/repository/p2/osgi/bundle/com.sun.jna/5.14.0.v20231211-1200/com.sun.jna-5.14.0.v20231211-1200.jar
 p2.eclipse.plugin:org.apache.batik.constants:eclipse-plugin @ /home/petr/.m2/repository/p2/osgi/bundle/org.apache.batik.constants/1.17.0.v20231215-1130/org.apache.batik.constants-1.17.0.v20231215-1130.jar
 p2.eclipse.plugin:org.apache.batik.css:eclipse-plugin @ /home/petr/.m2/repository/p2/osgi/bundle/org.apache.batik.css/1.17.0.v20231215-1130/org.apache.batik.css-1.17.0.v20231215-1130.jar

@@ -1,4 +1,4 @@
-eu.kalafatic.dcode:org.slf4j.nop:eclipse-plugin:lib/slf4j-nop-2.0.18.jar @ /home/petr/git/DCode-121126/plugins/org.slf4j.nop
+eu.kalafatic.dcode:org.slf4j.nop:eclipse-plugin:lib/slf4j-nop-2.0.18.jar @ /home/petr/git/evo-code-221126/plugins/org.slf4j.nop
 p2.eclipse.plugin:org.eclipse.osgi.source:eclipse-plugin @ /home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.osgi.source/3.19.0.v20240213-1246/org.eclipse.osgi.source-3.19.0.v20240213-1246.jar
 p2.eclipse.plugin:org.eclipse.osgi:eclipse-plugin @ /home/petr/.m2/repository/p2/osgi/bundle/org.eclipse.osgi/3.19.0.v20240213-1246/org.eclipse.osgi-3.19.0.v20240213-1246.jar
-p2.eclipse.plugin:slf4j.api:eclipse-plugin @ /home/petr/git/DCode-121126/targetplatform/orbit/slf4j.api-2.0.17.jar
+p2.eclipse.plugin:slf4j.api:eclipse-plugin @ /home/petr/git/evo-code-221126/targetplatform/orbit/slf4j.api-2.0.17.jar
