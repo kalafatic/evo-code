@@ -94,6 +94,19 @@ public final class ServerActivator implements BundleActivator {
                 () -> services.get(eu.kalafatic.dcode.config.agent.AgentRegistry.class),
                 () -> services.get(eu.kalafatic.dcode.config.profile.ProfileRegistry.class));
 
+        // Graceful shutdown via POST /api/v1/server/shutdown (the thin CLI `stop`).
+        api.setShutdownAction(() -> {
+            DCodeLog.info("server", "Graceful shutdown requested via API");
+            stopHttpServer();
+            try {
+                context.getBundle(0).stop();
+            } catch (Exception e) {
+                DCodeLog.warn("server", "Framework stop failed, falling back to System.exit: "
+                        + e.getMessage());
+                System.exit(0);
+            }
+        });
+
         boolean enabled = configuration.getConfiguration().webServerEnabled();
         boolean autoStart = configuration.getConfiguration().webServerAutoStart();
         if (!enabled) {
@@ -199,8 +212,11 @@ public final class ServerActivator implements BundleActivator {
                 server.start(fi.iki.elonen.NanoHTTPD.SOCKET_READ_TIMEOUT, false);
             } catch (java.io.IOException bindFailure) {
                 // Configured port occupied: deterministic fallback inside the DCode
-                // 58xxx block (never a silent jump to an unrelated port), then
-                // persisted so the next start reuses the same port.
+                // 58xxx block (never a silent jump to an unrelated port). The fallback
+                // is deliberately NOT persisted: a transient process (e.g. a CLI
+                // command such as `status`) must not overwrite the configured port,
+                // and a primary server should return to its configured port once it
+                // is free again.
                 if (configuredPort <= 0) {
                     throw bindFailure;
                 }
@@ -214,9 +230,9 @@ public final class ServerActivator implements BundleActivator {
                 conflictFallback = true;
                 DCodeLog.warn("server", "Configured port " + configuredPort
                         + " is occupied — bound fallback port " + fallback
-                        + " (58xxx block) and persisted it for the next start");
+                        + " (58xxx block)");
             }
-            if (conflictFallback || configuredPort <= 0) {
+            if (configuredPort <= 0) {
                 try {
                     configuration.update(
                             configuration.getConfiguration().withHttpPort(port));
@@ -231,6 +247,9 @@ public final class ServerActivator implements BundleActivator {
             // published for ops tooling and runtime-verification tests
             System.setProperty("dcode.server.port", String.valueOf(port));
             api.setHttpPortActual(port, bindAddress);
+            // The actual bound endpoint is the single discovery source for clients
+            // (thin CLI). Written only after a successful bind, never on conflict.
+            persistEndpoint(bindAddress, port);
             DCodeLog.info("server", "DCode HTTP API listening on "
                     + bindAddress + ":" + port + " ("
                     + (configuredPort > 0 ? "configured" : "allocated") + ")");
@@ -241,6 +260,32 @@ public final class ServerActivator implements BundleActivator {
             throw e instanceof RuntimeException re ? re
                     : new IllegalStateException("Failed to start DCode HTTP API: "
                             + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Persists the actually bound endpoint to {@code <dataDir>/server-endpoint.json}
+     * so thin clients (the CLI) can discover a server that bound a non-configured
+     * (fallback) port. This is separate from {@code dcode-config.json httpPort}, which
+     * remains the configured/desired port. Never throws; a failed write only reduces
+     * discoverability, it does not break the server.
+     */
+    private void persistEndpoint(String address, int port) {
+        try {
+            java.nio.file.Path dataDir = configuration.getConfiguration().dataDir();
+            java.nio.file.Path endpointFile = dataDir.resolve("server-endpoint.json");
+            com.fasterxml.jackson.databind.ObjectMapper mapper =
+                    new com.fasterxml.jackson.databind.ObjectMapper();
+            com.fasterxml.jackson.databind.node.ObjectNode node = mapper.createObjectNode();
+            node.put("host", address == null ? "127.0.0.1" : address);
+            node.put("port", port);
+            node.put("pid", ProcessHandle.current().pid());
+            node.put("boundAt", System.currentTimeMillis());
+            java.nio.file.Files.createDirectories(dataDir);
+            java.nio.file.Files.writeString(endpointFile,
+                    mapper.writerWithDefaultPrettyPrinter().writeValueAsString(node));
+        } catch (Exception e) {
+            DCodeLog.warn("server", "Could not persist server endpoint: " + e.getMessage());
         }
     }
 

@@ -1,0 +1,15 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: DCode CLI
+Bundle-SymbolicName: eu.kalafatic.dcode.cli;singleton:=true
+Bundle-Version: 2.6.11.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-21
+Bundle-Vendor: Kalafatic
+Bundle-ActivationPolicy: lazy
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=21))"
+Require-Bundle: eu.kalafatic.dcode.client;bundle-version="2.6.11",
+ org.eclipse.equinox.app;bundle-version="[1.5.0,2.0.0)"
+Import-Package: com.fasterxml.jackson.databind,
+ com.fasterxml.jackson.databind.node
+Export-Package: eu.kalafatic.dcode.cli
+Automatic-Module-Name: eu.kalafatic.dcode.cli

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?pde version="3.5"?>
+<product name="DCode CLI" uid="eu.kalafatic.dcode.cli.client"
+         id="eu.kalafatic.dcode.cli.client"
+         application="eu.kalafatic.dcode.cli.application"
+         version="2.6.11.qualifier" useFeatures="true"
+         includeLaunchers="true">
+
+   <aboutInfo>
+      <text>
+         DCode — Darwin Code. Thin command-line client (no server runtime).
+      </text>
+   </aboutInfo>
+
+   <configIni use="default">
+   </configIni>
+
+   <!-- Non-zero CLI exit codes must not block on an (invisible) GTK error
+        dialog: launcher.suppressErrors makes the native launcher report the
+        code on stderr and exit. -->
+   <launcherArgs>
+      <programArgs>--launcher.suppressErrors</programArgs>
+   </launcherArgs>
+
+   <launcher name="dcode-cli"/>
+
+   <features>
+      <feature id="eu.kalafatic.dcode.feature"/>
+      <feature id="org.eclipse.rcp"/>
+   </features>
+
+   <!-- Only the Equinox application framework is started. The DCode runtime
+        bundles (core/config/repositories/persistence/harness/java.tooling/
+        server) are present but deliberately NOT auto-started: the CLI is a
+        thin HTTP client and never initializes the runtime. -->
+   <configurations>
+      <plugin id="org.apache.felix.scr" autoStart="true" startLevel="2"/>
+      <plugin id="org.eclipse.core.runtime" autoStart="true" startLevel="4"/>
+      <plugin id="org.eclipse.equinox.common" autoStart="true" startLevel="2"/>
+      <plugin id="org.eclipse.equinox.event" autoStart="true" startLevel="2"/>
+      <plugin id="org.eclipse.equinox.simpleconfigurator" autoStart="true" startLevel="1"/>
+   </configurations>
+</product>

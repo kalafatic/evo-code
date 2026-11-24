@@ -238,19 +238,13 @@ public final class HeadlessApplication implements IApplication {
         int configuredPort = commandPort();
         String endpoint = "http://127.0.0.1:" + configuredPort;
         if (!first.isBlank()) {
-            // Wait for this instance to finish binding when it is the primary server.
-            // The local server-control commands do not need the HTTP endpoint; they
-            // drive the server inside this process (used when auto-start is off).
-            String normalized = normalize(first);
-            boolean localControlCommand = normalized.equals("server-start")
-                    || normalized.equals("server-stop")
-                    || normalized.equals("server-restart")
-                    || normalized.equals("server-status")
-                    || normalized.equals("config");
-            if (!localControlCommand && awaitServer(configuredPort)) {
-                return Integer.valueOf(1);
-            }
-            return Integer.valueOf(dispatch(first, args.subList(1, args.size()), endpoint));
+            // Thin-client separation: this binary is now the authoritative server only.
+            // Command-line commands live in the thin `dcode-cli` client, which talks to
+            // the server over HTTP without booting a runtime.
+            CONSOLE.println("[DCode] '" + first + "' is not a server command. "
+                    + "Use the thin client: `dcode-cli " + first + "` (see dcode-cli help). "
+                    + "`dcode-headless` runs the server only (daemon or interactive REPL).");
+            return Integer.valueOf(2);
         }
         // Interactive terminal without a subcommand: dcode> REPL over the same table.
         if (System.console() != null) {

@@ -27,6 +27,7 @@
         <module>plugins/eu.kalafatic.dcode.repositories</module>
         <module>plugins/eu.kalafatic.dcode.config</module>
         <module>plugins/eu.kalafatic.dcode.client</module>
+        <module>plugins/eu.kalafatic.dcode.cli</module>
         <module>plugins/eu.kalafatic.dcode.harness</module>
         <module>plugins/eu.kalafatic.dcode.java.tooling</module>
         <module>plugins/eu.kalafatic.dcode.persistence</module>

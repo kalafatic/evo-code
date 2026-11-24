@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: DCode UI
 Bundle-SymbolicName: eu.kalafatic.dcode.ui;singleton:=true
-Bundle-Version: 2.6.11.202611230813
+Bundle-Version: 2.6.11.202611240438
 Bundle-Vendor: Kalafatic
 Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=21))"
 Require-Bundle: eu.kalafatic.dcode.core;bundle-version="2.6.11",eu.kalaf

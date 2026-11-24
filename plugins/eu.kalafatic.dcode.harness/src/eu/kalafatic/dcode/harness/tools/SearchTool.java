@@ -62,7 +62,15 @@ public final class SearchTool implements Tool {
                 if (results.size() >= MAX_RESULTS) {
                     break;
                 }
-                String content = Files.readString(path);
+                String content;
+                try {
+                    content = Files.readString(path);
+                } catch (IOException e) {
+                    // Binary or unreadable file (e.g. a compiled .class throws
+                    // MalformedInputException): skip it instead of failing the
+                    // whole search. Workspaces routinely contain build output.
+                    continue;
+                }
                 int lineNo = 0;
                 for (String line : content.split("\n", -1)) {
                     lineNo++;

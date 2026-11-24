@@ -35,6 +35,9 @@
                                 <product>
                                     <id>eu.kalafatic.dcode.server.headless</id>
                                 </product>
+                                <product>
+                                    <id>eu.kalafatic.dcode.cli.client</id>
+                                </product>
                             </products>
                         </configuration>
                     </execution>

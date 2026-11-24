@@ -72,6 +72,7 @@ public final class DCodeApi {
     private final java.util.function.Supplier<eu.kalafatic.dcode.config.profile.ProfileRegistry> profileSupplier;
     private volatile int httpPortActual;
     private volatile String httpPortBindAddress = "";
+    private volatile Runnable shutdownAction;
 
     public DCodeApi(Supplier<SessionService> sessionSupplier,
                     Supplier<WorkspaceService> workspaceSupplier,
@@ -220,6 +221,15 @@ public final class DCodeApi {
         this.httpPortBindAddress = bindAddress == null ? "" : bindAddress;
     }
 
+    /**
+     * Registers the graceful-shutdown action invoked by {@code POST /api/v1/server/shutdown}.
+     * Set by the owning runtime (headless application) after wiring; when unset the
+     * endpoint acknowledges but does not terminate the process.
+     */
+    public void setShutdownAction(Runnable action) {
+        this.shutdownAction = action;
+    }
+
     /** Opens an SSE stream for one session (or all events when sessionId is null). */
     public InputStream openEventStream(String sessionId) {
         return sseHub.open(sessionId);
@@ -271,6 +281,9 @@ public final class DCodeApi {
             }
             if (parts.length >= 2 && parts[1].equals("ports")) {
                 return payload(requireGet(method, ports()));
+            }
+            if (parts.length >= 2 && parts[1].equals("server")) {
+                return payload(handleServer(method, parts));
             }
             if (parts.length >= 2 && parts[1].equals("agents")) {
                 return payload(handleAgents(method, parts, session));
@@ -2077,6 +2090,40 @@ public final class DCodeApi {
         ObjectNode node = mapper.createObjectNode();
         node.put("status", status);
         node.put("message", message);
+        return node;
+    }
+
+    /**
+     * Minimal lifecycle surface: {@code POST /api/v1/server/shutdown} triggers a graceful
+     * shutdown of the owning runtime. Loopback-bound; a server token (when configured)
+     * still gates it like every other route.
+     */
+    private String handleServer(String method, String[] parts) {
+        if (parts.length == 3 && parts[2].equals("shutdown") && method.equals("POST")) {
+            return ok(serverShutdown());
+        }
+        throw new NotFoundException("Unknown route: /api/v1/server");
+    }
+
+    private JsonNode serverShutdown() {
+        ObjectNode node = mapper.createObjectNode();
+        Runnable action = shutdownAction;
+        node.put("status", "shutting_down");
+        node.put("scheduled", action != null);
+        if (action != null) {
+            // Acknowledge first, then stop after the response has been flushed.
+            Thread shutdown = new Thread(() -> {
+                try {
+                    Thread.sleep(300);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+                action.run();
+            }, "dcode-api-shutdown");
+            shutdown.setDaemon(true);
+            shutdown.start();
+        }
         return node;
     }
 

@@ -25,9 +25,6 @@ import eu.kalafatic.dcode.harness.tool.ToolEngine;
 import eu.kalafatic.dcode.harness.tool.ToolRegistry;
 import eu.kalafatic.dcode.harness.tools.BuildTool;
 import eu.kalafatic.dcode.harness.tools.EditFileTool;
-import eu.kalafatic.dcode.harness.tools.GitCommitTool;
-import eu.kalafatic.dcode.harness.tools.GitDiffTool;
-import eu.kalafatic.dcode.harness.tools.GitStatusTool;
 import eu.kalafatic.dcode.harness.tools.ListFilesTool;
 import eu.kalafatic.dcode.harness.tools.ReadFileTool;
 import eu.kalafatic.dcode.harness.tools.SearchTool;
@@ -127,9 +124,6 @@ public final class HarnessActivator implements BundleActivator {
         toolRegistry.register(new EditFileTool());
         toolRegistry.register(new SearchTool());
         toolRegistry.register(new ShellTool());
-        toolRegistry.register(new GitStatusTool());
-        toolRegistry.register(new GitDiffTool());
-        toolRegistry.register(new GitCommitTool());
         toolRegistry.register(new BuildTool());
         toolRegistry.register(new TestTool());
 

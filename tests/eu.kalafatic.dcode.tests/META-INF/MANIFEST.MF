@@ -24,6 +24,7 @@ Require-Bundle: junit-jupiter-api;bundle-version="[5.10.2,6.0.0)",
  eu.kalafatic.dcode.harness;bundle-version="2.6.11",
  eu.kalafatic.dcode.persistence;bundle-version="2.6.11",
  eu.kalafatic.dcode.client;bundle-version="2.6.11",
+ eu.kalafatic.dcode.cli;bundle-version="2.6.11",
  eu.kalafatic.dcode.ui;bundle-version="2.6.11",
  eu.kalafatic.dcode.java.tooling;bundle-version="2.6.11",
  eu.kalafatic.dcode.server;bundle-version="2.6.11"

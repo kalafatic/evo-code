@@ -78,7 +78,9 @@ public record CoreConfiguration(
                 "http://127.0.0.1:11434", // providerEndpoint
                 "dcode",            // harnessType
                 "MAIN",             // agentRole
-                "qwen2.5-coder:32b", // defaultModel
+                "",                  // defaultModel (runtime registry default is authoritative;
+                                     // a hardcoded model name goes stale as soon as it is
+                                     // uninstalled, so leave it empty)
                 true,               // webServerEnabled
                 true);              // webServerAutoStart
     }

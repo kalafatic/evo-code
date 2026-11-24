@@ -90,7 +90,20 @@ public final class PersistenceActivator implements BundleActivator {
             reviewRegistration = context.registerService(ReviewService.class,
                     reviewService, highRanking);
 
-            new SessionRecoveryService(sessionService, workspaceService).recover();
+            // Restart recovery runs only for the primary server. A transient/secondary
+            // process (a CLI command, or a second DCode instance) that finds the
+            // configured HTTP port already occupied must not touch in-flight sessions:
+            // the live server owns their execution state, and marking a genuinely
+            // RUNNING session FAILED would corrupt active work.
+            int httpPort = durableConfig.getConfiguration().httpPort();
+            if (httpPort <= 0
+                    || eu.kalafatic.dcode.core.port.PortInspector.occupant(httpPort).isEmpty()) {
+                new SessionRecoveryService(sessionService, workspaceService).recover();
+            } else {
+                DCodeLog.info("recovery", "Configured HTTP port " + httpPort
+                        + " already in use — skipping restart recovery "
+                        + "(not the primary server)");
+            }
 
             lifecycle.registerAction(LifecycleStage.PERSISTENCE, "persistence-services",
                     new DCodeLifecycle.LifecycleAction() {

@@ -10,6 +10,7 @@ import eu.kalafatic.dcode.harness.tool.DefaultToolRegistry;
 import eu.kalafatic.dcode.harness.tool.ToolContext;
 import eu.kalafatic.dcode.harness.tool.ToolEngine;
 import eu.kalafatic.dcode.harness.tools.ReadFileTool;
+import eu.kalafatic.dcode.harness.tools.SearchTool;
 import eu.kalafatic.dcode.harness.tools.ShellTool;
 import eu.kalafatic.dcode.harness.tools.WriteFileTool;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +46,7 @@ class ToolEngineTest {
         bus.subscribe(e -> true, e -> events.add(e.type().name()));
         DefaultToolRegistry registry = new DefaultToolRegistry();
         registry.register(new ReadFileTool());
+        registry.register(new SearchTool());
         registry.register(new WriteFileTool());
         registry.register(new ShellTool());
         toolEngine = new ToolEngine(registry, bus);
@@ -120,5 +122,22 @@ class ToolEngineTest {
                 Map.of("command", "exit 3"));
         assertEquals(ExecutionState.FAILED, failed.state());
         assertFalse(failed.errorMessage().isBlank());
+    }
+
+    @Test
+    void searchCodeSkipsBinaryFiles() throws Exception {
+        // A workspace with a text file and a binary file (invalid UTF-8, as a compiled
+        // .class would be). The search must find the text match and ignore the binary
+        // file instead of failing the whole search (regression for "Input length = 1").
+        Files.writeString(temp.resolve("Source.java"),
+                "class Source { int NEEDLE_42 = 1; }");
+        Files.write(temp.resolve("Source.class"),
+                new byte[]{0x00, (byte) 0xFF, (byte) 0xFE, 0x01, 0x02, 0x03});
+
+        var call = toolEngine.execute(context(SessionState.RUNNING), "search_code",
+                Map.of("pattern", "NEEDLE_42", "path", "."));
+        assertEquals(ExecutionState.COMPLETED, call.state());
+        assertTrue(call.resultJson().contains("Source.java"));
+        assertTrue(call.resultJson().contains("NEEDLE_42"));
     }
 }
