@@ -51,8 +51,12 @@ public final class DCodeFileEditor extends EditorPart {
 
         CompositeRuler ruler = new CompositeRuler();
         LineNumberRulerColumn numbers = new LineNumberRulerColumn();
-        numbers.setBackground(new Color(parent.getDisplay(), new RGB(30, 33, 40)));
-        numbers.setForeground(new Color(parent.getDisplay(), new RGB(130, 138, 148)));
+        // Theme-aware colors: follow the active workbench theme instead of a
+        // hardcoded dark palette.
+        numbers.setBackground(parent.getDisplay()
+                .getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
+        numbers.setForeground(parent.getDisplay()
+                .getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW));
         ruler.addDecorator(0, numbers);
 
         viewer = new SourceViewer(root, ruler, SWT.V_SCROLL | SWT.H_SCROLL);
@@ -170,13 +174,24 @@ public final class DCodeFileEditor extends EditorPart {
             Pattern.DOTALL);
 
     private void highlight(StyledText text, int lineOffset, String lineText) {
-        Color keyword = new Color(text.getDisplay(), new RGB(122, 162, 214));
-        Color string = new Color(text.getDisplay(), new RGB(166, 205, 141));
-        Color comment = new Color(text.getDisplay(), new RGB(123, 130, 141));
+        boolean darkBackground = isDark(text.getBackground());
+        Color keyword = new Color(text.getDisplay(), darkBackground
+                ? new RGB(122, 162, 214) : new RGB(0, 0, 180));
+        Color string = new Color(text.getDisplay(), darkBackground
+                ? new RGB(166, 205, 141) : new RGB(0, 128, 0));
+        Color comment = new Color(text.getDisplay(), darkBackground
+                ? new RGB(123, 130, 141) : new RGB(96, 96, 96));
 
         apply(text, lineOffset, lineText, COMMENT, comment);
         apply(text, lineOffset, lineText, STRING, string);
         apply(text, lineOffset, lineText, KEYWORDS, keyword);
+    }
+
+    /** True when a background color is dark enough to need light text. */
+    private static boolean isDark(Color color) {
+        double luminance = 0.299 * color.getRed()
+                + 0.587 * color.getGreen() + 0.114 * color.getBlue();
+        return luminance < 140;
     }
 
     private void apply(StyledText text, int lineOffset, String lineText, Pattern pattern,

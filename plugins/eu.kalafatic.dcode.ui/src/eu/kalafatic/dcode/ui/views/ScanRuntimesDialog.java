@@ -83,7 +83,7 @@ public final class ScanRuntimesDialog extends Dialog {
             return;
         }
         status.setText("Scanning local endpoints (11434 Ollama, 8111/28780 ENR, "
-                + "58080 DCode)…");
+                + "58080 EVO-Code)…");
         Ui.run(RuntimeConnection.instance().api().scanRuntimes(null), list -> {
             findings.clear();
             list.forEach(findings::add);

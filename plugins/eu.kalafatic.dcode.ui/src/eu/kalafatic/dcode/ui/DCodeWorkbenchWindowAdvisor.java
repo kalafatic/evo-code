@@ -51,7 +51,7 @@ public final class DCodeWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor {
         } catch (RuntimeException ignored) {
             // product not ready yet
         }
-        return "DCode";
+        return "EVO-Code";
     }
 
     @Override

@@ -1,6 +1,6 @@
 /* DCode Settings page components.
    Shares the UPM design tokens and themes defined in css/app.css
-   (dark default, [data-theme="light"] overrides). */
+   (light default, [data-theme="dark"] overrides). */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
 body {

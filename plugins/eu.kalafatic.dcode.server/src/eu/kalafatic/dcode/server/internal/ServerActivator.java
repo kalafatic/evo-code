@@ -112,11 +112,11 @@ public final class ServerActivator implements BundleActivator {
         if (!enabled) {
             state = WebServerState.DISABLED;
             DCodeLog.info("server",
-                    "DCode web server disabled (webServer.enabled=false)");
+                    "EVO-Code web server disabled (webServer.enabled=false)");
         } else if (!autoStart) {
             state = WebServerState.STOPPED;
             DCodeLog.info("server",
-                    "DCode web server auto-start disabled (webServer.autoStart=false); "
+                    "EVO-Code web server auto-start disabled (webServer.autoStart=false); "
                             + "start it via the Web Interface menu or CLI");
         } else {
             lifecycle.registerAction(LifecycleStage.SERVER, "http-server",
@@ -250,15 +250,15 @@ public final class ServerActivator implements BundleActivator {
             // The actual bound endpoint is the single discovery source for clients
             // (thin CLI). Written only after a successful bind, never on conflict.
             persistEndpoint(bindAddress, port);
-            DCodeLog.info("server", "DCode HTTP API listening on "
+            DCodeLog.info("server", "EVO-Code HTTP API listening on "
                     + bindAddress + ":" + port + " ("
                     + (configuredPort > 0 ? "configured" : "allocated") + ")");
         } catch (Exception e) {
             server = null;
             state = WebServerState.FAILED;
-            DCodeLog.error("server", "Failed to start DCode HTTP API", e);
+            DCodeLog.error("server", "Failed to start EVO-Code HTTP API", e);
             throw e instanceof RuntimeException re ? re
-                    : new IllegalStateException("Failed to start DCode HTTP API: "
+                    : new IllegalStateException("Failed to start EVO-Code HTTP API: "
                             + e.getMessage(), e);
         }
     }
@@ -302,7 +302,7 @@ public final class ServerActivator implements BundleActivator {
         System.clearProperty("dcode.server.port");
         state = configuration.getConfiguration().webServerEnabled()
                 ? WebServerState.STOPPED : WebServerState.DISABLED;
-        DCodeLog.info("server", "DCode HTTP API stopped");
+        DCodeLog.info("server", "EVO-Code HTTP API stopped");
     }
 
     @Override

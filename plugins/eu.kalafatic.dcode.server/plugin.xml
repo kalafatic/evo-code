@@ -8,8 +8,8 @@
    </extension>
 
    <extension id="headless" point="org.eclipse.core.runtime.products">
-      <product application="eu.kalafatic.dcode.server.application" name="DCode Headless">
-         <property name="appName" value="DCode Headless"/>
+      <product application="eu.kalafatic.dcode.server.application" name="EVO-Code Headless">
+         <property name="appName" value="EVO-Code Headless"/>
       </product>
    </extension>
 </plugin>

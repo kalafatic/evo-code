@@ -88,7 +88,7 @@ class HeadlessRuntimeWebTest {
                 HttpResponse.BodyHandlers.ofString());
         assertEquals(200, index.statusCode());
         assertTrue(index.body().contains("<html"), index.body());
-        assertTrue(index.body().contains("DCode"));
+        assertTrue(index.body().contains("EVO-Code"));
 
         HttpResponse<String> apiClient = client.send(HttpRequest.newBuilder(
                         URI.create("http://127.0.0.1:" + port + "/js/api.js"))

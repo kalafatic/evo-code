@@ -121,9 +121,9 @@ public final class RuntimeConnection {
                 // product always has its own local server: switch to it instead of
                 // leaving the whole UI pointed at a foreign service.
                 Ui.log("warning", "Endpoint " + client.baseUrl()
-                        + " is not a DCode server ("
+                        + " is not an EVO-Code server ("
                         + result.identity().describe()
-                        + "); switching to the local embedded DCode server.");
+                        + "); switching to the local embedded EVO-Code server.");
                 Preferences preferences = Preferences.userNodeForPackage(
                         RuntimeConnection.class);
                 preferences.remove(PREF_ENDPOINT);
@@ -139,7 +139,7 @@ public final class RuntimeConnection {
             setState(result.state(), result.identity(), result.diagnostic());
             switch (result.state()) {
                 case READY -> {
-                    Ui.log("success", "DCode backend ready: "
+                    Ui.log("success", "EVO-Code backend ready: "
                             + result.identity().describe());
                     Ui.clearFailureAggregates();
                     Ui.log("info", "Loading workspaces and runtimes.");
@@ -149,7 +149,7 @@ public final class RuntimeConnection {
                 case DEGRADED -> Ui.log("warning", result.describe());
                 case ERROR -> Ui.logDetailed("error", result.describe(), List.of(
                         "Action: check the endpoint in File ▸ Connect to Runtime… "
-                                + "(is this a DCode server, not an ENR/Ollama endpoint?) "
+                                + "(is this an EVO-Code server, not an ENR/Ollama endpoint?) "
                                 + "or use Scan… to find local services",
                         "Detail: " + result.diagnostic()));
                 default -> Ui.log("network", result.describe());
@@ -169,7 +169,7 @@ public final class RuntimeConnection {
         if (localUrl != null && !localUrl.equals(client.baseUrl())) {
             Ui.log("warning", "Endpoint " + client.baseUrl()
                     + " is unreachable (" + message
-                    + "); switching to the local embedded DCode server at "
+                    + "); switching to the local embedded EVO-Code server at "
                     + localUrl);
             Preferences preferences = Preferences.userNodeForPackage(
                     RuntimeConnection.class);

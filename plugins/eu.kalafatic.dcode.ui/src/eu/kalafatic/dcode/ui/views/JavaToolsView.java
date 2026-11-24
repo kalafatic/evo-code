@@ -2,8 +2,10 @@ package eu.kalafatic.dcode.ui.views;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import eu.kalafatic.dcode.ui.FormFields;
 import eu.kalafatic.dcode.ui.RuntimeConnection;
 import eu.kalafatic.dcode.ui.Ui;
+import eu.kalafatic.dcode.ui.UiPreferences;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
@@ -117,9 +119,14 @@ public final class JavaToolsView extends ViewPart implements Ui.Refreshable {
                     new Label(area, SWT.NONE).setText(name + ":");
                     Text field = new Text(area, SWT.BORDER);
                     field.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+                    field.setText(orEmpty(UiPreferences.get("tool." + toolName
+                            + "." + name)));
+                    field.setToolTipText(name);
                     fields.add(field);
                 }
             }
+            FormFields.hint(area, "Arguments are pre-filled with the last values used "
+                    + "for this tool. Leave a field empty to omit it.", 2);
             return area;
         }
 
@@ -163,6 +170,11 @@ public final class JavaToolsView extends ViewPart implements Ui.Refreshable {
                                     + result.path("error").asText("failed"));
                             return;
                         }
+                        for (java.util.Map.Entry<String, Object> entry
+                                : arguments.entrySet()) {
+                            UiPreferences.put("tool." + toolName + "."
+                                    + entry.getKey(), String.valueOf(entry.getValue()));
+                        }
                         Ui.log("tool", toolName + " -> " + result.path("output").toString());
                         org.eclipse.jface.dialogs.MessageDialog.openInformation(
                                 getShell(), toolName + " result",
@@ -170,6 +182,10 @@ public final class JavaToolsView extends ViewPart implements Ui.Refreshable {
                     }),
                     toolName);
             super.okPressed();
+        }
+
+        private static String orEmpty(String value) {
+            return value == null ? "" : value;
         }
     }
 

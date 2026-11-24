@@ -254,13 +254,26 @@ window.DCodeSessions = (function () {
     }
 
     function appendMessage(container, message) {
+        const role = (message.role || '').toLowerCase();
         const line = document.createElement('div');
-        line.className = 'log-line log-' + message.role.toLowerCase();
+        line.className = 'log-line log-' + role;
         const ts = document.createElement('span');
         ts.className = 'ts';
         ts.textContent = (message.timestamp || '').slice(11, 19) + ' ';
         line.appendChild(ts);
-        line.appendChild(document.createTextNode(message.content || ''));
+
+        const content = message.content || '';
+        if (role === 'assistant' || role === 'user') {
+            // Conversation roles render as markdown (code syntax highlighting +
+            // per-block copy); system/tool lines stay plain mono text.
+            const body = document.createElement('div');
+            body.className = 'chat-body';
+            body.innerHTML = DCodeMarkdown.renderMarkdown(content);
+            DCodeMarkdown.wireCodeCopy(body);
+            line.appendChild(body);
+        } else {
+            line.appendChild(document.createTextNode(content));
+        }
         // Message model has no structured parts (flat role/content strings), so
         // "Copy Code" extracts fenced blocks and falls back to the whole text.
         // Retry/Continue are intentionally absent: no backend operation exists.
@@ -268,13 +281,13 @@ window.DCodeSessions = (function () {
             DCodeApp.showContextMenu(event, [
                 {
                     label: 'Copy',
-                    action: () => copyText(message.content || '')
+                    action: () => copyText(content)
                 },
                 {
                     label: 'Copy Code',
                     action: () => {
-                        const code = extractCodeBlocks(message.content || '');
-                        copyText(code || (message.content || ''));
+                        const code = extractCodeBlocks(content);
+                        copyText(code || content);
                     }
                 }
             ]);

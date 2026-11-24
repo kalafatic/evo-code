@@ -128,7 +128,7 @@ public final class RuntimeSelectorView extends ViewPart implements Ui.Refreshabl
                 new AiEnvironmentWizardDialog(parent.getShell()).open());
 
         connectionChip = new Label(root, SWT.NONE);
-        connectionChip.setToolTipText("DCode backend connection state");
+        connectionChip.setToolTipText("EVO-Code backend connection state");
 
         getViewSite().getActionBars().getToolBarManager().add(new Action("Refresh") {
             @Override

@@ -1,8 +1,10 @@
 package eu.kalafatic.dcode.ui.views;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import eu.kalafatic.dcode.ui.FormFields;
 import eu.kalafatic.dcode.ui.RuntimeConnection;
 import eu.kalafatic.dcode.ui.Ui;
+import eu.kalafatic.dcode.ui.UiPreferences;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
@@ -76,21 +78,27 @@ public final class RuntimeDialog extends Dialog {
         }
         typeCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         typeCombo.addModifyListener(event -> {
-            if (existing == null && endpointText != null
-                    && endpointText.getText().isBlank()) {
-                endpointText.setText(TYPES[typeCombo.getSelectionIndex()][2]);
+            if (existing == null && endpointText != null) {
+                int index = typeCombo.getSelectionIndex();
+                if (index < 0) {
+                    index = 0;
+                }
+                endpointText.setText(rememberedEndpoint(TYPES[index][0]));
             }
         });
         new Label(root, SWT.NONE);
 
-        new Label(root, SWT.NONE).setText("Display name");
+        FormFields.optional(root, "Display name");
         nameText = new Text(root, SWT.BORDER);
         nameText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        nameText.setToolTipText("Label shown in the runtime lists; defaults to the "
+                + "type when left empty.");
         new Label(root, SWT.NONE);
 
-        new Label(root, SWT.NONE).setText("Endpoint / base URL");
+        FormFields.required(root, "Endpoint / base URL");
         endpointText = new Text(root, SWT.BORDER);
         endpointText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        endpointText.setToolTipText("Base URL of the inference service.");
         new Label(root, SWT.NONE);
 
         new Label(root, SWT.NONE).setText("Bearer token (optional)");
@@ -129,7 +137,8 @@ public final class RuntimeDialog extends Dialog {
     private void loadExisting() {
         if (existing == null) {
             typeCombo.select(0);
-            endpointText.setText(TYPES[0][2]);
+            endpointText.setText(rememberedEndpoint(TYPES[0][0]));
+            nameText.setText(orEmpty(rememberedName(TYPES[0][0])));
             return;
         }
         String wireType = existing.path("type").asText("");
@@ -146,6 +155,28 @@ public final class RuntimeDialog extends Dialog {
     private String[] selection() {
         int index = typeCombo.getSelectionIndex();
         return index >= 0 ? TYPES[index] : TYPES[0];
+    }
+
+    /** Last-used endpoint for a runtime type, falling back to the type default. */
+    private static String rememberedEndpoint(String type) {
+        String persisted = UiPreferences.get("runtime.endpoint." + type);
+        if (persisted != null) {
+            return persisted;
+        }
+        for (String[] entry : TYPES) {
+            if (entry[0].equals(type)) {
+                return entry[2];
+            }
+        }
+        return "";
+    }
+
+    private static String rememberedName(String type) {
+        return UiPreferences.get("runtime.name." + type);
+    }
+
+    private static String orEmpty(String value) {
+        return value == null ? "" : value;
     }
 
     private void testConnection() {
@@ -214,7 +245,8 @@ public final class RuntimeDialog extends Dialog {
         String name = nameText.getText().trim();
         String endpoint = endpointText.getText().trim();
         if (endpoint.isBlank()) {
-            testResult.setText("Endpoint is required");
+            testResult.setText("Endpoint is required — enter the base URL of the "
+                    + "inference service (e.g. http://127.0.0.1:11434).");
             return;
         }
         String[] type = selection();
@@ -226,6 +258,8 @@ public final class RuntimeDialog extends Dialog {
                             authToken.isEmpty() ? null : authToken,
                             apiKey.isEmpty() ? null : apiKey),
                     json -> {
+                        UiPreferences.put("runtime.endpoint." + type[0], endpoint);
+                        UiPreferences.put("runtime.name." + type[0], name);
                         Ui.log("Runtime registered: "
                                 + json.path("id").asText(""));
                         Ui.refreshAll();
@@ -236,6 +270,8 @@ public final class RuntimeDialog extends Dialog {
                             authToken.isEmpty() ? null : authToken,
                             apiKey.isEmpty() ? null : apiKey),
                     json -> {
+                        UiPreferences.put("runtime.endpoint." + type[0], endpoint);
+                        UiPreferences.put("runtime.name." + type[0], name);
                         Ui.log("Runtime updated: "
                                 + existing.path("id").asText(""));
                         Ui.refreshAll();

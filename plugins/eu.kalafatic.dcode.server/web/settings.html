@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DCode Settings</title>
+<title>EVO-Code Settings</title>
 <link rel="stylesheet" href="css/app.css">
 <link rel="stylesheet" href="css/settings.css">
 </head>
 <body>
 <header>
-  <div class="brand"><span class="logo">D</span> DCode <small>Settings &amp; persistence</small></div>
+  <div class="brand"><span class="logo">E</span> EVO-Code <small>Settings &amp; persistence</small></div>
   <div class="spacer"></div>
   <div id="connChip"><span class="dot" id="dot"></span><span id="connText">connecting…</span></div>
   <button class="small" id="themeBtn" title="Toggle light/dark theme">theme</button>
@@ -44,12 +44,12 @@
 
     <div class="card">
       <h4>Persistence</h4>
-      <div class="kv"><span class="k">Owner</span><span class="v">DCode backend</span></div>
+      <div class="kv"><span class="k">Owner</span><span class="v">EVO-Code backend</span></div>
       <div class="kv"><span class="k">Sessions</span><span class="v">server-side</span></div>
       <div class="kv"><span class="k">Reviews</span><span class="v">server-side</span></div>
       <div class="kv"><span class="k">UI layout</span><span class="v">Eclipse workspace</span></div>
       <div class="kv"><span class="k">Credentials</span><span class="v">Eclipse secure storage</span></div>
-      <div class="muted" style="margin-top:6px">Workspaces, sessions, reviews, providers, runtimes, models, agents and profiles are owned and persisted by the DCode backend; this page is the same frontend an external browser sees.</div>
+      <div class="muted" style="margin-top:6px">Workspaces, sessions, reviews, providers, runtimes, models, agents and profiles are owned and persisted by the EVO-Code backend; this page is the same frontend an external browser sees.</div>
     </div>
 
     <div class="card">
@@ -74,7 +74,7 @@
       <table id="providerTable"><tbody><tr><td class="muted">loading…</td></tr></tbody></table>
       <div class="row" style="margin-top:8px;margin-bottom:0">
         <button class="small" id="scanBtn2">Scan local runtimes</button>
-        <span class="muted" id="scanHint">Ollama · ENR · DCode</span>
+        <span class="muted" id="scanHint">Ollama · ENR · EVO-Code</span>
       </div>
     </div>
 
@@ -93,7 +93,7 @@
       <h4>Harnesses</h4>
       <table id="harnessTable"><tbody><tr><td class="muted">loading…</td></tr></tbody></table>
       <div class="muted" style="margin-top:6px">Set the default harness and enable/disable
-        execution; the DCode native harness is integrated, external CLI harnesses are
+        execution; the EVO-Code native harness is integrated, external CLI harnesses are
         reported honestly.</div>
     </div>
 
@@ -136,8 +136,8 @@ async function api(path, options) {
   return DCodeApi.get(path);
 }
 function applyTheme() {
-  let theme = "dark";
-  try { theme = localStorage.getItem("dcode.theme") || "dark"; } catch (e) { /* ignore */ }
+  let theme = "light";
+  try { theme = localStorage.getItem("dcode.theme") || "light"; } catch (e) { /* ignore */ }
   document.documentElement.dataset.theme = theme;
 }
 $("themeBtn").onclick = () => {
@@ -147,8 +147,8 @@ $("themeBtn").onclick = () => {
 };
 const themeSelect = $("themeSelect");
 if (themeSelect) {
-  let currentTheme = "dark";
-  try { currentTheme = localStorage.getItem("dcode.theme") || "dark"; } catch (e) { /* ignore */ }
+  let currentTheme = "light";
+  try { currentTheme = localStorage.getItem("dcode.theme") || "light"; } catch (e) { /* ignore */ }
   themeSelect.value = currentTheme === "light" ? "light" : "dark";
   themeSelect.onchange = () => {
     document.documentElement.dataset.theme = themeSelect.value;
@@ -408,7 +408,7 @@ async function boot() {
     $("cState").textContent = "unreachable";
     $("connText").textContent = e.message;
     $("dot").className = "dot err";
-    banner("Cannot reach the DCode backend (" + e.message + "). Use Retry to reload.", "err");
+    banner("Cannot reach the EVO-Code backend (" + e.message + "). Use Retry to reload.", "err");
   }
 }
 

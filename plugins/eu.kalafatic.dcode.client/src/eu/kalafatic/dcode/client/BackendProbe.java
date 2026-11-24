@@ -88,17 +88,17 @@ public final class BackendProbe {
                     case 404 -> new ProbeResult(ConnectionState.ERROR,
                             new BackendIdentity("", "", false, "", java.util.Map.of()),
                             "The endpoint " + endpoint
-                                    + " does not provide the DCode API "
+                                    + " does not provide the EVO-Code API "
                                     + "(/api/v1/health is missing)",
                             "HTTP 404 on /api/v1/health");
                     case 405 -> new ProbeResult(ConnectionState.ERROR,
                             new BackendIdentity("", "", false, "", java.util.Map.of()),
                             "The endpoint " + endpoint
-                                    + " does not provide the DCode API",
+                                    + " does not provide the EVO-Code API",
                             "HTTP 405 on /api/v1/health");
                     default -> new ProbeResult(ConnectionState.ERROR,
                             new BackendIdentity("", "", false, "", java.util.Map.of()),
-                            "The DCode backend at " + endpoint
+                            "The EVO-Code backend at " + endpoint
                                     + " failed the health check",
                             "HTTP " + apiError.status() + " " + code(apiError));
                 };
@@ -113,24 +113,24 @@ public final class BackendProbe {
         BackendIdentity identity = BackendIdentity.parse(health);
         if (!identity.isDCode()) {
             return new ProbeResult(ConnectionState.ERROR, identity,
-                    "The endpoint " + endpoint + " is not a DCode server (it reports: "
+                    "The endpoint " + endpoint + " is not an EVO-Code server (it reports: "
                             + identity.describe() + ")",
-                    "DCode API contract check failed: expected application=DCODE, got "
+                    "EVO-Code API contract check failed: expected application=DCODE, got "
                             + (identity.application().isBlank() ? "(none)"
                             : "'" + identity.application() + "'"));
         }
         if (identity.ready()) {
             return new ProbeResult(ConnectionState.READY, identity,
-                    "DCode backend ready: " + identity.describe(),
+                    "EVO-Code backend ready: " + identity.describe(),
                     "health check passed");
         }
         if ("UP".equalsIgnoreCase(identity.status())) {
             return new ProbeResult(ConnectionState.INITIALIZING, identity,
-                    "DCode backend is starting up: " + identity.describe(),
+                    "EVO-Code backend is starting up: " + identity.describe(),
                     "ready=false, status=UP");
         }
         return new ProbeResult(ConnectionState.DEGRADED, identity,
-                "DCode backend reports degraded readiness: " + identity.describe(),
+                "EVO-Code backend reports degraded readiness: " + identity.describe(),
                 "ready=false, status=" + identity.status());
     }
 

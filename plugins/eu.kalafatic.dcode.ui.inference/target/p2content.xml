@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <units size='1'>
-  <unit id='eu.kalafatic.dcode.ui.inference' version='2.6.11.202611240438' generation='2'>
-    <update id='eu.kalafatic.dcode.ui.inference' range='[0.0.0,2.6.11.202611240438)' severity='0'/>
+  <unit id='eu.kalafatic.dcode.ui.inference' version='2.6.11.202611241812' generation='2'>
+    <update id='eu.kalafatic.dcode.ui.inference' range='[0.0.0,2.6.11.202611241812)' severity='0'/>
     <properties size='6'>
       <property name='org.eclipse.equinox.p2.name' value='DCode Inference Presentation'/>
       <property name='org.eclipse.equinox.p2.provider' value='Kalafatic'/>
@@ -11,11 +11,11 @@
       <property name='maven-type' value='eclipse-plugin'/>
     </properties>
     <provides size='6'>
-      <provided namespace='org.eclipse.equinox.p2.iu' name='eu.kalafatic.dcode.ui.inference' version='2.6.11.202611240438'/>
-      <provided namespace='osgi.bundle' name='eu.kalafatic.dcode.ui.inference' version='2.6.11.202611240438'/>
+      <provided namespace='org.eclipse.equinox.p2.iu' name='eu.kalafatic.dcode.ui.inference' version='2.6.11.202611241812'/>
+      <provided namespace='osgi.bundle' name='eu.kalafatic.dcode.ui.inference' version='2.6.11.202611241812'/>
       <provided namespace='java.package' name='eu.kalafatic.dcode.inference.ui' version='0.0.0'/>
       <provided namespace='java.package' name='eu.kalafatic.dcode.inference.ui.model' version='0.0.0'/>
-      <provided namespace='osgi.identity' name='eu.kalafatic.dcode.ui.inference' version='2.6.11.202611240438'>
+      <provided namespace='osgi.identity' name='eu.kalafatic.dcode.ui.inference' version='2.6.11.202611241812'>
         <properties size='1'>
           <property name='type' value='osgi.bundle'/>
         </properties>
@@ -30,20 +30,20 @@
           eu.kalafatic.dcode.ui.inference
         </description>
       </requiredProperties>
-      <required namespace='org.eclipse.equinox.p2.iu' name='eu.kalafatic.dcode.ui.inference.source' range='[2.6.11.202611240438,2.6.11.202611240438]' optional='true'>
+      <required namespace='org.eclipse.equinox.p2.iu' name='eu.kalafatic.dcode.ui.inference.source' range='[2.6.11.202611241812,2.6.11.202611241812]' optional='true'>
         <filter>
           (org.eclipse.update.install.sources=true)
         </filter>
       </required>
     </requires>
     <artifacts size='1'>
-      <artifact classifier='osgi.bundle' id='eu.kalafatic.dcode.ui.inference' version='2.6.11.202611240438'/>
+      <artifact classifier='osgi.bundle' id='eu.kalafatic.dcode.ui.inference' version='2.6.11.202611241812'/>
     </artifacts>
     <touchpoint id='org.eclipse.equinox.p2.osgi' version='1.0.0'/>
     <touchpointData size='1'>
       <instructions size='1'>
         <instruction key='manifest'>
-          Bundle-SymbolicName: eu.kalafatic.dcode.ui.inference;singleton:=true&#xA;Bundle-Version: 2.6.11.202611240438&#xA;
+          Bundle-SymbolicName: eu.kalafatic.dcode.ui.inference;singleton:=true&#xA;Bundle-Version: 2.6.11.202611241812&#xA;
         </instruction>
       </instructions>
     </touchpointData>

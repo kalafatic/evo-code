@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
-<product name="DCode" uid="eu.kalafatic.dcode.ui.rcp"
+<product name="EVO-Code" uid="eu.kalafatic.dcode.ui.rcp"
          id="eu.kalafatic.dcode.ui.rcp"
          application="eu.kalafatic.dcode.ui.application"
          version="2.6.11.qualifier" useFeatures="true"
@@ -8,7 +8,7 @@
 
    <aboutInfo>
       <text>
-         DCode — Darwin Code. Native AI coding harness IDE.
+         EVO-Code — Darwin Code. Native AI coding harness IDE.
       </text>
    </aboutInfo>
 
@@ -61,6 +61,6 @@
    </configurations>
 
    <properties>
-      <property name="cssTheme" value="org.eclipse.e4.ui.css.theme.e4_dark"/>
+      <property name="cssTheme" value="org.eclipse.e4.ui.css.theme.e4_default"/>
    </properties>
 </product>

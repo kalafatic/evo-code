@@ -138,7 +138,7 @@ public final class HeadlessApplication implements IApplication {
                       show          same output (explicit form)""",
                     this::cmdConfig),
             new Command("start", "start",
-                    "verify/start the DCode server on the configured port",
+                    "verify/start the EVO-Code server on the configured port",
                     """
                     start
                       The DCode server starts automatically with the headless
@@ -148,7 +148,7 @@ public final class HeadlessApplication implements IApplication {
                       the server (launch dcode-headless without a command).""",
                     this::cmdStart),
             new Command("stop", "stop",
-                    "stop the DCode server process on this port",
+                    "stop the EVO-Code server process on this port",
                     """
                     stop
                       Stops the DCode server process listening on the configured port
@@ -229,7 +229,7 @@ public final class HeadlessApplication implements IApplication {
             }
             rememberLog(level, source, message);
         });
-        CONSOLE.println("[DCode] Headless runtime starting (no UI dependencies)");
+        CONSOLE.println("[EVO-Code] Headless runtime starting (no UI dependencies)");
         // The server itself is started by the ServerActivator at the SERVER lifecycle
         // stage; commands run against it once the port is published.
         // Commands always target the authoritative DCode port (see commandPort):
@@ -241,7 +241,7 @@ public final class HeadlessApplication implements IApplication {
             // Thin-client separation: this binary is now the authoritative server only.
             // Command-line commands live in the thin `dcode-cli` client, which talks to
             // the server over HTTP without booting a runtime.
-            CONSOLE.println("[DCode] '" + first + "' is not a server command. "
+            CONSOLE.println("[EVO-Code] '" + first + "' is not a server command. "
                     + "Use the thin client: `dcode-cli " + first + "` (see dcode-cli help). "
                     + "`dcode-headless` runs the server only (daemon or interactive REPL).");
             return Integer.valueOf(2);
@@ -252,11 +252,11 @@ public final class HeadlessApplication implements IApplication {
                 return Integer.valueOf(1);
             }
             runRepl(endpoint);
-            CONSOLE.println("[DCode] Headless runtime stopped");
+            CONSOLE.println("[EVO-Code] Headless runtime stopped");
             return IApplication.EXIT_OK;
         }
         // Daemon/service: no TTY, no subcommand — run the server in the foreground.
-        CONSOLE.println("[DCode] No terminal and no subcommand — running as a service. "
+        CONSOLE.println("[EVO-Code] No terminal and no subcommand — running as a service. "
                 + "Commands: status runtimes providers models sessions logs web terminal "
                 + "agents config start stop restart help");
         while (!stopped) {
@@ -269,7 +269,7 @@ public final class HeadlessApplication implements IApplication {
                 break;
             }
         }
-        CONSOLE.println("[DCode] Headless runtime stopped");
+        CONSOLE.println("[EVO-Code] Headless runtime stopped");
         return IApplication.EXIT_OK;
     }
 
@@ -295,10 +295,10 @@ public final class HeadlessApplication implements IApplication {
     /** Interactive REPL: banner, prompt loop, dispatch through the command table. */
     private void runRepl(String endpoint) {
         java.io.Console console = System.console();
-        CONSOLE.println("DCode interactive console — type /help for commands, "
+        CONSOLE.println("EVO-Code interactive console — type /help for commands, "
                 + "/exit (or Ctrl+D) to quit.");
         while (!stopped) {
-            String line = console.readLine("dcode> ");
+            String line = console.readLine("evo-code> ");
             if (line == null) { // EOF
                 break;
             }
@@ -313,7 +313,7 @@ public final class HeadlessApplication implements IApplication {
             }
             dispatch(command, tokens.subList(1, tokens.size()), endpoint);
         }
-        CONSOLE.println("[DCode] Interactive console closed");
+        CONSOLE.println("[EVO-Code] Interactive console closed");
     }
 
     /**
@@ -336,7 +336,7 @@ public final class HeadlessApplication implements IApplication {
                 try {
                     return candidate.handler().run(args, endpoint);
                 } catch (Exception e) {
-                    CONSOLE.println("[DCode] " + rawCommand + " failed: " + e.getMessage());
+                    CONSOLE.println("[EVO-Code] " + rawCommand + " failed: " + e.getMessage());
                     return 1;
                 }
             }
@@ -425,7 +425,7 @@ public final class HeadlessApplication implements IApplication {
         }
         JsonNode status = getJson(endpoint + "/api/v1/status");
         JsonNode ports = getJson(endpoint + "/api/v1/ports");
-        CONSOLE.println("DCode status: ready=" + status.path("ready").asBoolean());
+        CONSOLE.println("EVO-Code status: ready=" + status.path("ready").asBoolean());
         status.path("stages").properties().forEach(entry ->
                 CONSOLE.println("  " + entry.getKey() + ": "
                         + entry.getValue().asText()));
@@ -632,7 +632,7 @@ public final class HeadlessApplication implements IApplication {
         java.nio.file.Path dataDir = java.nio.file.Path.of(System.getProperty("dcode.home",
                 java.nio.file.Path.of(System.getProperty("user.home", "."), ".dcode")
                         .toString()));
-        CONSOLE.println("DCode configuration:");
+        CONSOLE.println("EVO-Code configuration:");
         CONSOLE.println("  port:       " + configuredPort
                 + (boundPort == null ? " (not bound in this process)"
                 : " (bound: " + boundPort + ")"));
@@ -651,7 +651,7 @@ public final class HeadlessApplication implements IApplication {
         int configuredPort = commandPort();
         if (portOccupied(configuredPort)) {
             JsonNode status = getJson(endpoint + "/api/v1/status");
-            CONSOLE.println("[DCode] Server already running on port " + configuredPort
+            CONSOLE.println("[EVO-Code] Server already running on port " + configuredPort
                     + " — ready=" + status.path("ready").asBoolean());
             return 0;
         }
@@ -660,17 +660,17 @@ public final class HeadlessApplication implements IApplication {
         if (control != null) {
             try {
                 control.start();
-                CONSOLE.println("[DCode] Web server started in this process: "
+                CONSOLE.println("[EVO-Code] Web server started in this process: "
                         + control.url());
                 return 0;
             } catch (RuntimeException e) {
-                CONSOLE.println("[DCode] Failed: " + e.getMessage());
+                CONSOLE.println("[EVO-Code] Failed: " + e.getMessage());
                 return 1;
             }
         }
-        CONSOLE.println("[DCode] Nothing is listening on port " + configuredPort
-                + ". Start DCode with:");
-        CONSOLE.println("  dcode-headless   (daemon or interactive dcode> REPL)");
+        CONSOLE.println("[EVO-Code] Nothing is listening on port " + configuredPort
+                + ". Start EVO-Code with:");
+        CONSOLE.println("  dcode-headless   (daemon or interactive evo-code> REPL)");
         return 1;
     }
 
@@ -681,7 +681,7 @@ public final class HeadlessApplication implements IApplication {
 
     private int cmdRestart(List<String> args, String endpoint) throws Exception {
         stopServerProcess();
-        CONSOLE.println("[DCode] Restart: start DCode again (e.g. the "
+        CONSOLE.println("[EVO-Code] Restart: start EVO-Code again (e.g. the "
                 + "dcode-headless launcher or your service manager) once the "
                 + "port is released.");
         return 0;
@@ -690,10 +690,10 @@ public final class HeadlessApplication implements IApplication {
     private int cmdServerStatus(List<String> args, String endpoint) {
         WebServerControl control = localServerControl();
         if (control == null) {
-            CONSOLE.println("[DCode] No local server control in this process.");
+            CONSOLE.println("[EVO-Code] No local server control in this process.");
             return 1;
         }
-        CONSOLE.println("[DCode] Web server state: " + control.state()
+        CONSOLE.println("[EVO-Code] Web server state: " + control.state()
                 + (control.isRunning() ? " (" + control.url() + ")" : ""));
         return 0;
     }
@@ -701,15 +701,15 @@ public final class HeadlessApplication implements IApplication {
     private int cmdServerStart(List<String> args, String endpoint) {
         WebServerControl control = localServerControl();
         if (control == null) {
-            CONSOLE.println("[DCode] No local server control in this process.");
+            CONSOLE.println("[EVO-Code] No local server control in this process.");
             return 1;
         }
         try {
             control.start();
-            CONSOLE.println("[DCode] Web server started: " + control.url());
+            CONSOLE.println("[EVO-Code] Web server started: " + control.url());
             return 0;
         } catch (RuntimeException e) {
-            CONSOLE.println("[DCode] Failed to start web server: " + e.getMessage());
+            CONSOLE.println("[EVO-Code] Failed to start web server: " + e.getMessage());
             return 1;
         }
     }
@@ -717,26 +717,26 @@ public final class HeadlessApplication implements IApplication {
     private int cmdServerStop(List<String> args, String endpoint) {
         WebServerControl control = localServerControl();
         if (control == null) {
-            CONSOLE.println("[DCode] No local server control in this process.");
+            CONSOLE.println("[EVO-Code] No local server control in this process.");
             return 1;
         }
         control.stop();
-        CONSOLE.println("[DCode] Web server stopped (state: " + control.state() + ").");
+        CONSOLE.println("[EVO-Code] Web server stopped (state: " + control.state() + ").");
         return 0;
     }
 
     private int cmdServerRestart(List<String> args, String endpoint) {
         WebServerControl control = localServerControl();
         if (control == null) {
-            CONSOLE.println("[DCode] No local server control in this process.");
+            CONSOLE.println("[EVO-Code] No local server control in this process.");
             return 1;
         }
         try {
             control.restart();
-            CONSOLE.println("[DCode] Web server restarted: " + control.url());
+            CONSOLE.println("[EVO-Code] Web server restarted: " + control.url());
             return 0;
         } catch (RuntimeException e) {
-            CONSOLE.println("[DCode] Failed to restart web server: " + e.getMessage());
+            CONSOLE.println("[EVO-Code] Failed to restart web server: " + e.getMessage());
             return 1;
         }
     }
@@ -760,8 +760,8 @@ public final class HeadlessApplication implements IApplication {
     }
 
     private int cmdExit(List<String> args, String endpoint) {
-        CONSOLE.println("[DCode] /exit only applies to the interactive prompt — start "
-                + "DCode without a command on a terminal to enter the REPL.");
+        CONSOLE.println("[EVO-Code] /exit only applies to the interactive prompt — start "
+                + "EVO-Code without a command on a terminal to enter the REPL.");
         return 0;
     }
 
@@ -777,7 +777,7 @@ public final class HeadlessApplication implements IApplication {
             CONSOLE.println("Unknown command '" + topic + "'." + suggestion(topic));
             return 1;
         }
-        CONSOLE.println("DCode headless commands (against the same backend as RCP and Web):");
+        CONSOLE.println("EVO-Code headless commands (against the same backend as RCP and Web):");
         for (Command command : commands) {
             CONSOLE.printf("  %-38s %s%n", command.syntax(), command.shortHelp());
         }
@@ -848,16 +848,16 @@ public final class HeadlessApplication implements IApplication {
         int port = commandPort();
         var occupant = eu.kalafatic.dcode.core.port.PortInspector.occupant(port);
         if (occupant.isEmpty()) {
-            CONSOLE.println("[DCode] Nothing is listening on port " + port);
+            CONSOLE.println("[EVO-Code] Nothing is listening on port " + port);
             return;
         }
         long pid = occupant.get().pid();
         if (pid == ProcessHandle.current().pid()) {
-            CONSOLE.println("[DCode] This process owns port " + port
+            CONSOLE.println("[EVO-Code] This process owns port " + port
                     + " — send SIGTERM (Ctrl+C) or run stop from another process.");
             return;
         }
-        CONSOLE.println("[DCode] Stopping DCode (pid " + pid + " on port " + port
+        CONSOLE.println("[EVO-Code] Stopping EVO-Code (pid " + pid + " on port " + port
                 + ")…");
         ProcessHandle.of(pid).ifPresent(handle -> {
             handle.destroy();
@@ -881,9 +881,9 @@ public final class HeadlessApplication implements IApplication {
         }
         try {
             new ProcessBuilder(command).inheritIO().start();
-            CONSOLE.println("[DCode] Opened " + target);
+            CONSOLE.println("[EVO-Code] Opened " + target);
         } catch (Exception e) {
-            CONSOLE.println("[DCode] Cannot open " + target + ": " + e.getMessage());
+            CONSOLE.println("[EVO-Code] Cannot open " + target + ": " + e.getMessage());
         }
     }
 

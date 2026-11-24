@@ -33,23 +33,24 @@ public final class ConnectionDialog extends Dialog {
         Composite area = (Composite) super.createDialogArea(parent);
         area.setLayout(new GridLayout(2, false));
 
-        Label endpointLabel = new Label(area, SWT.NONE);
-        endpointLabel.setText("Server endpoint:");
+        FormFields.required(area, "Server endpoint");
         endpointText = new Text(area, SWT.BORDER);
         endpointText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         endpointText.setText(RuntimeConnection.instance().endpoint() != null
                 ? RuntimeConnection.instance().endpoint() : "http://127.0.0.1:58080");
         endpointText.setToolTipText("Leave the local endpoint to use the embedded "
                 + "runtime; set a remote URL to connect to an independent headless "
-                + "DCode server (not an ENR/Ollama endpoint).");
+                + "EVO-Code server (not an ENR/Ollama endpoint).");
 
-        Label tokenLabel = new Label(area, SWT.NONE);
-        tokenLabel.setText("Bearer token:");
+        FormFields.optional(area, "Bearer token");
         tokenText = new Text(area, SWT.BORDER | SWT.PASSWORD);
         tokenText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         tokenText.setToolTipText("Optional; only needed when the server requires "
                 + "authentication. Stored in the platform secure storage, never "
                 + "displayed.");
+
+        FormFields.hint(area, "The endpoint is pre-filled with the current "
+                + "connection. Change it only to switch to another EVO-Code server.", 2);
 
         Button testButton = new Button(area, SWT.PUSH);
         testButton.setText("Test connection");
@@ -60,11 +61,11 @@ public final class ConnectionDialog extends Dialog {
         if (RuntimeConnection.instance().hasLocalServer()) {
             Button localButton = new Button(area, SWT.PUSH);
             localButton.setText("Use local server");
-            localButton.setToolTipText("Reconnect to the embedded DCode server of this "
+            localButton.setToolTipText("Reconnect to the embedded EVO-Code server of this "
                     + "application (drops the persisted remote endpoint)");
             localButton.addListener(SWT.Selection, event -> {
                 RuntimeConnection.instance().useLocalServer();
-                Ui.log("network", "Switched to the local embedded DCode server.");
+                Ui.log("network", "Switched to the local embedded EVO-Code server.");
                 close();
             });
             new Label(area, SWT.NONE);
@@ -88,9 +89,9 @@ public final class ConnectionDialog extends Dialog {
                 return;
             }
             switch (result.state()) {
-                case READY -> probeResult.setText("OK — DCode backend ready: "
+                case READY -> probeResult.setText("OK — EVO-Code backend ready: "
                         + result.identity().describe());
-                case INITIALIZING -> probeResult.setText("OK — DCode backend starting: "
+                case INITIALIZING -> probeResult.setText("OK — EVO-Code backend starting: "
                         + result.identity().describe());
                 case DEGRADED -> probeResult.setText("Warning — " + result.describe());
                 default -> probeResult.setText("Failed — " + result.describe());
@@ -101,12 +102,17 @@ public final class ConnectionDialog extends Dialog {
     @Override
     protected void configureShell(Shell shell) {
         super.configureShell(shell);
-        shell.setText("Connect to DCode Runtime");
+        shell.setText("Connect to EVO-Code Runtime");
     }
 
     @Override
     protected void okPressed() {
         String endpoint = endpointText.getText().trim();
+        if (endpoint.isEmpty()) {
+            probeResult.setText("Server endpoint is required — enter the URL of the "
+                    + "EVO-Code server.");
+            return;
+        }
         String token = tokenText.getText();
         if (token.isBlank()) {
             token = null;

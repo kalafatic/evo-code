@@ -25,7 +25,7 @@ window.DCodeRuntimes = (function () {
         const scan = document.createElement('button');
         scan.className = 'btn';
         scan.textContent = 'Scan local…';
-        scan.title = 'Find Ollama/ENR/DCode services on this machine and register them';
+        scan.title = 'Find Ollama/ENR/EVO-Code services on this machine and register them';
         scan.onclick = () => DCodeApp.openModal('runtime-scan', null);
         toolbar.appendChild(scan);
         const refresh = document.createElement('button');
@@ -928,7 +928,7 @@ window.DCodeRuntimes = (function () {
         const status = document.createElement('div');
         status.className = 'muted';
         status.textContent = 'Probing local endpoints (Ollama 11434, ENR 8111/28780, '
-            + 'DCode 48080)…';
+            + 'EVO-Code 48080)…';
         body.appendChild(status);
         const list = document.createElement('div');
         body.appendChild(list);

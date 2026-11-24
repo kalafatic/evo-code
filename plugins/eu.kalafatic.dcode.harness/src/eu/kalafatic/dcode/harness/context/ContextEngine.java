@@ -29,7 +29,7 @@ public final class ContextEngine {
     public String buildSystemPrompt(Workspace workspace, Session session, String task,
                                     List<ToolDefinition> tools) {
         StringBuilder prompt = new StringBuilder();
-        prompt.append("You are DCode, a native AI coding agent of the Darwin family. ");
+        prompt.append("You are EVO-Code, a native AI coding agent of the Darwin family. ");
         prompt.append("You work on a development task inside a workspace containing one or "
                 + "more Git repositories.\n\n");
         prompt.append("## Task\n").append(task).append("\n\n");

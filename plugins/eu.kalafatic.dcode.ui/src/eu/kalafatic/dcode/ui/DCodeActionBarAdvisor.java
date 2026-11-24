@@ -39,7 +39,7 @@ public final class DCodeActionBarAdvisor extends ActionBarAdvisor {
             }
         };
         connectAction.setId("eu.kalafatic.dcode.ui.connect");
-        connectAction.setToolTipText("Change the DCode server endpoint or bearer token");
+        connectAction.setToolTipText("Change the EVO-Code server endpoint or bearer token");
 
         newSessionAction = new Action("&New Session…") {
             @Override
@@ -54,12 +54,12 @@ public final class DCodeActionBarAdvisor extends ActionBarAdvisor {
         exitAction = ActionFactory.QUIT.create(window);
         register(exitAction);
 
-        aboutAction = new Action("About DCode") {
+        aboutAction = new Action("About EVO-Code") {
             @Override
             public void run() {
                 org.eclipse.jface.dialogs.MessageDialog.openInformation(window.getShell(),
-                        "DCode",
-                        "DCode — Darwin Code\nNative AI coding harness\n"
+                        "EVO-Code",
+                        "EVO-Code — Darwin Code\nNative AI coding harness\n"
                                 + "Version 2.6.11");
             }
         };
@@ -253,7 +253,7 @@ public final class DCodeActionBarAdvisor extends ActionBarAdvisor {
         menuBar.add(webInterfaceMenu);
 
         MenuManager windowMenu = new MenuManager("&Window", "window");
-        windowMenu.add(new Action("Open Perspective: DCode") {
+        windowMenu.add(new Action("Open Perspective: EVO-Code") {
             @Override
             public void run() {
                 org.eclipse.ui.PlatformUI.getWorkbench().getActiveWorkbenchWindow()
@@ -334,8 +334,8 @@ public final class DCodeActionBarAdvisor extends ActionBarAdvisor {
             public void run() {
                 String base = HelpLauncher.baseUrl();
                 if (base == null) {
-                    Ui.log("error", "No DCode web server known — diagnostics are "
-                            + "served by the verified DCode backend only. Fix the "
+                    Ui.log("error", "No EVO-Code web server known — diagnostics are "
+                            + "served by the verified EVO-Code backend only. Fix the "
                             + "connection (Window ▸ Connection) first.");
                     return;
                 }
@@ -436,7 +436,7 @@ public final class DCodeActionBarAdvisor extends ActionBarAdvisor {
             openItem.setText("Open Web Interface");
             openItem.setEnabled(webOpenable);
             if (!webOpenable) {
-                openItem.setToolTipText("No DCode web server known — fix the "
+                openItem.setToolTipText("No EVO-Code web server known — fix the "
                         + "connection (Window ▸ Connection) first");
             }
             openItem.addSelectionListener(new org.eclipse.swt.events.SelectionAdapter() {

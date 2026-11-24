@@ -104,8 +104,8 @@ public final class RuntimeScanner {
         JsonNode dcodeHealth = getJson(base + "/api/v1/health");
         if (dcodeHealth != null && "DCODE".equalsIgnoreCase(
                 dcodeHealth.path("application").asText(""))) {
-            return new Finding(base, "dcode", "DCode server",
-                    "DCode backend " + dcodeHealth.path("version").asText("")
+            return new Finding(base, "dcode", "EVO-Code server",
+                    "EVO-Code backend " + dcodeHealth.path("version").asText("")
                     + " (status=" + dcodeHealth.path("status").asText("")
                     + ", ready=" + dcodeHealth.path("ready").asBoolean(false) + ")",
                     true, 0, List.of());

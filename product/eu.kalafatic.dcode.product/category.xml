@@ -3,5 +3,5 @@
    <feature id="eu.kalafatic.dcode.feature" version="0.0.0">
       <category name="dcode"/>
    </feature>
-   <category-def name="dcode" label="DCode"/>
+   <category-def name="dcode" label="EVO-Code"/>
 </site>

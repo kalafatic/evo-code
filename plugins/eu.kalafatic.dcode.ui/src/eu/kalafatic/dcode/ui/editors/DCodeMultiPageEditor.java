@@ -65,7 +65,7 @@ public final class DCodeMultiPageEditor extends MultiPageEditorPart {
     private volatile boolean disposed;
     private volatile boolean webLoaded;
     private volatile String resolvedWebUrl;
-    private volatile String webStatusSnapshot = "Connecting to the DCode web "
+    private volatile String webStatusSnapshot = "Connecting to the EVO-Code web "
             + "application…";
     private volatile String lastEndpointSnapshot;
     private volatile boolean settingsReady;
@@ -90,11 +90,11 @@ public final class DCodeMultiPageEditor extends MultiPageEditorPart {
         webBar.setLayout(new GridLayout(2, false));
         webBar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         webStatus = new Label(webBar, SWT.NONE);
-        webStatus.setText("Connecting to the DCode web application…");
+        webStatus.setText("Connecting to the EVO-Code web application…");
         webStatus.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         webReload = new Button(webBar, SWT.PUSH);
         webReload.setText("Reload");
-        webReload.setToolTipText("Re-check the DCode web application and reload it");
+        webReload.setToolTipText("Re-check the EVO-Code web application and reload it");
         webReload.addListener(SWT.Selection, event -> reloadWeb());
 
         try {
@@ -102,7 +102,7 @@ public final class DCodeMultiPageEditor extends MultiPageEditorPart {
             webBrowser.setJavascriptEnabled(true);
             webBrowser.setLayoutData(new GridData(GridData.FILL_BOTH));
             installWebListeners(webBrowser);
-            System.out.println("[DCode:editor] Web Browser created (WebKit).");
+            System.out.println("[EVO-Code:editor] Web Browser created (WebKit).");
         } catch (org.eclipse.swt.SWTError | RuntimeException error) {
             webBrowser = null;
             Label fallback = new Label(webComposite, SWT.WRAP);
@@ -111,7 +111,7 @@ public final class DCodeMultiPageEditor extends MultiPageEditorPart {
                     + "(SWT Browser).\nIt could not be created on this system: "
                     + error.getMessage());
             webStatus.setText("SWT Browser unavailable.");
-            System.err.println("[DCode:editor] SWT Browser creation failed: "
+            System.err.println("[EVO-Code:editor] SWT Browser creation failed: "
                     + error);
         }
         addPage(webComposite);
@@ -142,7 +142,7 @@ public final class DCodeMultiPageEditor extends MultiPageEditorPart {
                     @Override
                     public void changed(TitleEvent event) {
                         if (event.title != null
-                                && event.title.contains("DCode Settings")) {
+                                && event.title.contains("EVO-Code Settings")) {
                             settingsReady = true;
                             settingsDiag = "settings page ready (title)";
                             Ui.log("success", "Settings page loaded its "
@@ -219,7 +219,7 @@ public final class DCodeMultiPageEditor extends MultiPageEditorPart {
             return;
         }
         long generation = readinessGeneration.incrementAndGet();
-        setWebStatus("Connecting to the DCode web application…");
+        setWebStatus("Connecting to the EVO-Code web application…");
         readinessExecutor.execute(() -> {
             startLocalServerIfNeeded();
             for (int attempt = 1; attempt <= READINESS_ATTEMPTS && !disposed
@@ -229,7 +229,7 @@ public final class DCodeMultiPageEditor extends MultiPageEditorPart {
                     baseUrl = RuntimeConnection.instance().webBaseUrl();
                 } catch (RuntimeException resolutionError) {
                     baseUrl = null;
-                    System.err.println("[DCode:editor] web endpoint resolution failed: "
+                    System.err.println("[EVO-Code:editor] web endpoint resolution failed: "
                             + resolutionError);
                 }
                 if (baseUrl != null && !baseUrl.isBlank()) {
@@ -244,7 +244,7 @@ public final class DCodeMultiPageEditor extends MultiPageEditorPart {
                                 resolvedWebUrl = target;
                                 setWebStatus("Loading " + target + " …");
                                 webBrowser.setUrl(target);
-                                Ui.log("success", "Loading the DCode web application "
+                                Ui.log("success", "Loading the EVO-Code web application "
                                         + "from " + target);
                             }
                         });
@@ -277,7 +277,7 @@ public final class DCodeMultiPageEditor extends MultiPageEditorPart {
                     }
                 }
                 if (attempt % 10 == 0) {
-                    String message = "Waiting for the DCode web application (attempt "
+                    String message = "Waiting for the EVO-Code web application (attempt "
                             + attempt + "/" + READINESS_ATTEMPTS
                             + (baseUrl == null ? ", no endpoint yet)" : ", not reachable yet)");
                     setStatusAsync(message);
@@ -295,9 +295,9 @@ public final class DCodeMultiPageEditor extends MultiPageEditorPart {
                 if (disposed || generation != readinessGeneration.get()) {
                     return;
                 }
-                setWebStatus("The DCode web application is not reachable"
+                setWebStatus("The EVO-Code web application is not reachable"
                         + (endpoint == null ? " (no endpoint)." : " at " + endpoint + "."));
-                Ui.logDetailed("error", "DCode web application did not become "
+                Ui.logDetailed("error", "EVO-Code web application did not become "
                         + "reachable", java.util.List.of(
                         "Endpoint: " + (endpoint == null ? "none" : endpoint),
                         "Action: check the connection (Window ▸ Connection) and the "
@@ -381,23 +381,23 @@ public final class DCodeMultiPageEditor extends MultiPageEditorPart {
             }
             if (control.state()
                     == eu.kalafatic.dcode.core.server.WebServerState.DISABLED) {
-                System.out.println("[DCode:editor] local web server is disabled by "
+                System.out.println("[EVO-Code:editor] local web server is disabled by "
                         + "configuration (webServer.enabled=false); the Web tab "
                         + "cannot load the application.");
                 return;
             }
-            System.out.println("[DCode:editor] local web server is " + control.state()
+            System.out.println("[EVO-Code:editor] local web server is " + control.state()
                     + "; starting it for the Web tab.");
             control.start();
         } catch (RuntimeException e) {
-            System.err.println("[DCode:editor] cannot start the local web server: "
+            System.err.println("[EVO-Code:editor] cannot start the local web server: "
                     + e);
         }
     }
 
     /** Manual reload: re-runs the bounded readiness sequence for both pages. */
     public void reloadWeb() {
-        Ui.log("info", "Manual reload of the DCode web application requested.");
+        Ui.log("info", "Manual reload of the EVO-Code web application requested.");
         webLoaded = false;
         resolvedWebUrl = null;
         settingsReady = false;

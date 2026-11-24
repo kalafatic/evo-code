@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DCode — Darwin Code</title>
+    <title>EVO-Code — Darwin Code</title>
     <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 <header id="topbar">
     <div class="brand">
         <span class="brand-mark">◈</span>
-        <span class="brand-name">DCode</span>
+        <span class="brand-name">EVO-Code</span>
         <span class="brand-sub">Darwin Code</span>
     </div>
     <div class="topbar-center">
@@ -23,6 +23,7 @@
         <span id="connection-status" class="conn conn-disconnected" title="Server connection">● offline</span>
         <button id="btn-conn" class="btn btn-small" title="Connection state and diagnostics">connection</button>
         <button id="btn-auth" class="btn btn-small" title="Set server token">auth</button>
+        <a id="btn-settings" class="btn btn-small" href="settings.html" title="Providers, models, runtimes, projects">settings</a>
         <button id="btn-theme" class="btn btn-small" title="Toggle light/dark theme (UPM design standard)">theme</button>
         <a id="btn-help" class="btn btn-small" href="help.html" target="_blank" rel="noopener" title="Help and documentation">help</a>
     </div>
@@ -36,14 +37,11 @@
                 <button class="nav-btn active" data-view="workspace">Workspace</button>
                 <button class="nav-btn" data-view="sessions">Sessions</button>
             </div>
-            <div class="nav-group-label">Runtime</div>
+            <div class="nav-group-label">Manage</div>
             <div class="nav-group">
                 <button class="nav-btn" data-view="runtimes">Runtimes</button>
                 <button class="nav-btn" data-view="models">Models</button>
                 <button class="nav-btn" data-view="modelmanager">Model Manager</button>
-            </div>
-            <div class="nav-group-label">Tools</div>
-            <div class="nav-group">
                 <button class="nav-btn" data-view="tools">Java Tools</button>
                 <button class="nav-btn" data-view="activity">Activity</button>
             </div>
@@ -55,7 +53,7 @@
         <div id="tabs-bar"></div>
         <div id="tab-content">
             <div id="placeholder" class="placeholder">
-                <div class="placeholder-title">DCode Web</div>
+                <div class="placeholder-title">EVO-Code Web</div>
                 <div class="placeholder-text">
                     Select a workspace and session to start developing.<br>
                     The native Eclipse JDT/PDE tooling is available in the Java Tools view.

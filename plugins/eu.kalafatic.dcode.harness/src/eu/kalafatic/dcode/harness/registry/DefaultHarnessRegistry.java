@@ -24,8 +24,8 @@ import java.util.concurrent.atomic.AtomicReference;
 public final class DefaultHarnessRegistry implements HarnessRegistry {
 
     private final List<HarnessDescriptor> descriptors = List.of(
-            new HarnessDescriptor("dcode", "DCode",
-                    "Native DCode coding harness (tool-calling agent loop)",
+            new HarnessDescriptor("dcode", "EVO-Code",
+                    "Native EVO-Code coding harness (tool-calling agent loop)",
                     true, true, List.of("tools", "streaming", "sessions", "review")),
             new HarnessDescriptor("opencode", "OpenCode",
                     "OpenCode CLI coding agent (external; not integrated into this build)",

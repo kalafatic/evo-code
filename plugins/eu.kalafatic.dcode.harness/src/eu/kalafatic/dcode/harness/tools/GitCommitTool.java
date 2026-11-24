@@ -39,7 +39,7 @@ public final class GitCommitTool implements Tool {
         if (repository == null) {
             return ToolResult.failure("Unknown repository: " + repoName);
         }
-        String authorName = "DCode Agent";
+        String authorName = "EVO-Code Agent";
         String authorEmail = "agent@dcode.local";
         String account = ToolArgs.string(arguments, "account", "");
         if (!account.isBlank() && context.gitAccounts() != null) {

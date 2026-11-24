@@ -25,8 +25,8 @@ public final class HelpLauncher {
         String topic = anchor == null || anchor.isBlank() ? TOPIC_TOP : anchor;
         String baseUrl = baseUrl();
         if (baseUrl == null) {
-            Ui.log("error", "No DCode web server known — help is served by the "
-                    + "verified DCode backend only. Fix the connection "
+            Ui.log("error", "No EVO-Code web server known — help is served by the "
+                    + "verified EVO-Code backend only. Fix the connection "
                     + "(Window ▸ Connection) first.");
             return;
         }

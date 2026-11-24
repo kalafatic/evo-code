@@ -66,7 +66,7 @@ public final class Ui {
                     try {
                         listener.onEvent(event);
                     } catch (RuntimeException listenerError) {
-                        System.out.println("[DCode:ui] SSE listener failed: "
+                        System.out.println("[EVO-Code:ui] SSE listener failed: "
                                 + listenerError.getMessage());
                     }
                 }
@@ -117,7 +117,7 @@ public final class Ui {
                     return;
                 }
             }
-            System.out.println("[DCode:" + kind + "] " + message);
+            System.out.println("[EVO-Code:" + kind + "] " + message);
         });
     }
 
@@ -138,7 +138,7 @@ public final class Ui {
                     return;
                 }
             }
-            System.out.println("[DCode:" + type + "] " + data);
+            System.out.println("[EVO-Code:" + type + "] " + data);
         });
     }
 
@@ -280,7 +280,7 @@ public final class Ui {
                     details.add("HTTP status: " + apiError.status());
                 }
                 details.add("Possible cause: client/server API contract mismatch or "
-                        + "wrong endpoint (is this a DCode server?).");
+                        + "wrong endpoint (is this an EVO-Code server?).");
                 details.add("Action: Retry · Connection Details (Window ▸ Connection) "
                         + "· Diagnose endpoint");
             }

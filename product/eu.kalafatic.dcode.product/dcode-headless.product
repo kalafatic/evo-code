@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
-<product name="DCode Headless" uid="eu.kalafatic.dcode.server.headless"
+<product name="EVO-Code Headless" uid="eu.kalafatic.dcode.server.headless"
          id="eu.kalafatic.dcode.server.headless"
          application="eu.kalafatic.dcode.server.application"
          version="2.6.11.qualifier" useFeatures="true"
@@ -8,7 +8,7 @@
 
    <aboutInfo>
       <text>
-         DCode — Darwin Code. Headless server runtime.
+         EVO-Code — Darwin Code. Headless server runtime.
       </text>
    </aboutInfo>
 

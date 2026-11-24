@@ -1,6 +1,6 @@
 /* UPM design standard tokens (UniversalProjectManager/web/app.css).
-   Default runtime theme is dark (like UPM); [data-theme="light"] provides the
-   UPM light palette. The DCode-specific variable names are kept as aliases so
+   Default runtime theme is light; [data-theme="dark"] provides the
+   UPM dark palette. The DCode-specific variable names are kept as aliases so
    every existing rule follows automatically. */
 :root {
     /* UPM canonical dark tokens */

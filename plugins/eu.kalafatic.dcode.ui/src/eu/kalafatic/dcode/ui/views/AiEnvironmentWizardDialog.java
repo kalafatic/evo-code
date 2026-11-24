@@ -1,8 +1,10 @@
 package eu.kalafatic.dcode.ui.views;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import eu.kalafatic.dcode.ui.FormFields;
 import eu.kalafatic.dcode.ui.RuntimeConnection;
 import eu.kalafatic.dcode.ui.Ui;
+import eu.kalafatic.dcode.ui.UiPreferences;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
@@ -42,6 +44,11 @@ public final class AiEnvironmentWizardDialog extends Dialog {
             {"enr", "ENR (EVO Native Runtime)"},
             {"ollama", "Ollama"},
             {"openai", "OpenAI-compatible API"}};
+
+    private static final String[] DEFAULT_ENDPOINTS = {
+            "http://127.0.0.1:28780",       // enr
+            "http://127.0.0.1:11434",       // ollama
+            "https://api.example.com/v1"};  // openai
 
     private Combo locationCombo;
     private Combo typeCombo;
@@ -96,14 +103,19 @@ public final class AiEnvironmentWizardDialog extends Dialog {
         GridData typeData = new GridData(GridData.FILL_HORIZONTAL);
         typeData.horizontalSpan = 2;
         typeCombo.setLayoutData(typeData);
+        typeCombo.addModifyListener(event -> {
+            if (endpointText != null) {
+                endpointText.setText(rememberedEndpoint(selectedType()));
+            }
+        });
 
         // Step 3: endpoint
-        new Label(root, SWT.NONE).setText("3. Endpoint");
+        FormFields.required(root, "3. Endpoint");
         endpointText = new Text(root, SWT.BORDER);
         GridData endpointData = new GridData(GridData.FILL_HORIZONTAL);
         endpointData.horizontalSpan = 2;
         endpointText.setLayoutData(endpointData);
-        endpointText.setText("http://127.0.0.1:11434");
+        endpointText.setText(rememberedEndpoint("ollama"));
         endpointText.setToolTipText("Base URL of the inference service");
 
         // Step 4: authentication
@@ -220,6 +232,20 @@ public final class AiEnvironmentWizardDialog extends Dialog {
         return TYPES[index >= 0 ? index : 0][0];
     }
 
+    /** Last-used endpoint for a provider type, falling back to the type default. */
+    private static String rememberedEndpoint(String type) {
+        String persisted = UiPreferences.get("wizard.endpoint." + type);
+        if (persisted != null) {
+            return persisted;
+        }
+        for (int i = 0; i < TYPES.length; i++) {
+            if (TYPES[i][0].equals(type)) {
+                return DEFAULT_ENDPOINTS[i];
+            }
+        }
+        return "";
+    }
+
     private void testConnection() {
         String endpoint = endpointText.getText().trim();
         if (endpoint.isBlank()) {
@@ -279,7 +305,7 @@ public final class AiEnvironmentWizardDialog extends Dialog {
                 + (endpoint.isBlank() ? "(endpoint pending)" : endpoint)
                 + " · Model: " + (model.isBlank() ? "(pending)" : model)
                 + " · Agent: " + (agent.isBlank() ? "(default)" : agent)
-                + "\nHarness: DCode (native coding harness — integrated).");
+                + "\nHarness: EVO-Code (native coding harness — integrated).");
         summary.getParent().layout(true, true);
     }
 
@@ -299,6 +325,9 @@ public final class AiEnvironmentWizardDialog extends Dialog {
                                 : tokenText.getText().trim(), null),
                 created -> Ui.async(() -> {
                     registered[0] = created.path("id").asText("");
+                    UiPreferences.put("wizard.endpoint." + selectedType(), endpoint);
+                    UiPreferences.put("wizard.location",
+                            String.valueOf(locationCombo.getSelectionIndex()));
                     Ui.log("success", "Runtime registered: " + registered[0]
                             + " (" + endpoint + ")");
                     String model = modelCombo.getText();

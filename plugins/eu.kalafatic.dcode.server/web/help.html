@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DCode Help</title>
+<title>EVO-Code Help</title>
 <style>
   /* UPM design standard tokens (UniversalProjectManager/web/app.css). */
   :root {
@@ -67,7 +67,7 @@
 <body>
 
 <header>
-  <div class="brand">◈ <span>DCode</span> Help</div>
+  <div class="brand">◈ <span>EVO-Code</span> Help</div>
   <div class="sub">Darwin Code — native AI coding harness</div>
   <button id="theme-btn" title="Toggle light/dark theme">theme</button>
 </header>
@@ -85,7 +85,7 @@
 
 <section id="top">
   <h2>Overview</h2>
-  <p><strong>DCode</strong> is a native AI coding harness: an LLM-driven coding agent that plans,
+  <p><strong>EVO-Code</strong> is a native AI coding harness: an LLM-driven coding agent that plans,
   executes tools (git, build, test, JDT analysis, refactoring) and produces reviewed changes in a
   workspace. It is one product with three client faces over a single backend:</p>
   <ul>
@@ -206,7 +206,7 @@
   <p>Run <code>dcode-headless &lt;command&gt;</code> against the same backend as RCP and Web.
   Commands may be written plain or slash-prefixed (<code>/status</code>); leading slashes are
   normalized. With no command and an interactive terminal the launcher starts a
-  <code>dcode&gt;</code> REPL reading the same commands until <code>/exit</code> or EOF; without a
+  <code>evo-code&gt;</code> REPL reading the same commands until <code>/exit</code> or EOF; without a
   terminal it runs the server in the foreground (daemon mode).</p>
   <pre><code>status [runtime]      backend readiness and lifecycle stages
                     (with "runtime": runtime registrations summary)
@@ -223,8 +223,8 @@ web                  open the web interface in the system browser
 terminal [dir]       open a system terminal (optionally in a directory)
 agents list          agent list with the default marker (GET /api/v1/agents)
 config show          effective config summary: port, data dir, workspaces dir (no secrets)
-start                verify/start the DCode server on the configured port
-stop                 stop the DCode server process on this port
+start                verify/start the EVO-Code server on the configured port
+stop                 stop the EVO-Code server process on this port
 restart              stop the server (start it again afterwards)
 exit                 leave the interactive REPL (no-op as a launch argument)
 help [topic]         this help, or the help of one command
@@ -238,7 +238,7 @@ help [topic]         this help, or the help of one command
   <ul>
     <li><code>GET /api/v1/status</code> — readiness flag and lifecycle stage states.</li>
     <li><code>GET /api/v1/ports</code> — the actually bound service ports and their states
-        (port conventions: DCode 48xxx).</li>
+        (port conventions: EVO-Code 48xxx).</li>
     <li><code>GET /api/v1/health</code> — application identity, version and readiness (used by the
         client probe).</li>
     <li><code>GET /api/v1/events/stream[?sessionId=…]</code> — SSE stream of domain events
@@ -254,8 +254,8 @@ help [topic]         this help, or the help of one command
 (function () {
   var KEY = "dcode.theme";
   function apply() {
-    var theme = "dark";
-    try { theme = localStorage.getItem(KEY) || "dark"; } catch (e) { /* ignore */ }
+    var theme = "light";
+    try { theme = localStorage.getItem(KEY) || "light"; } catch (e) { /* ignore */ }
     document.documentElement.dataset.theme = theme;
   }
   apply();

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
-<product name="DCode CLI" uid="eu.kalafatic.dcode.cli.client"
+<product name="EVO-Code CLI" uid="eu.kalafatic.dcode.cli.client"
          id="eu.kalafatic.dcode.cli.client"
          application="eu.kalafatic.dcode.cli.application"
          version="2.6.11.qualifier" useFeatures="true"
@@ -8,7 +8,7 @@
 
    <aboutInfo>
       <text>
-         DCode — Darwin Code. Thin command-line client (no server runtime).
+         EVO-Code — Darwin Code. Thin command-line client (no server runtime).
       </text>
    </aboutInfo>
 

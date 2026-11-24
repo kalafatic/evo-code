@@ -649,7 +649,7 @@ public final class DCodeApi {
                 if (message == null || message.isBlank()) {
                     throw new IllegalArgumentException("Field 'message' is required");
                 }
-                String authorName = "DCode RCP";
+                String authorName = "EVO-Code RCP";
                 String authorEmail = "rcp@dcode.local";
                 var gitAccounts = gitAccountsSupplier.get();
                 String accountId = body.path("accountId").asText(null);
@@ -1659,7 +1659,7 @@ public final class DCodeApi {
     private String ports() {
         String bindAddress = configuration.getConfiguration().bindAddress();
         ArrayNode array = mapper.createArrayNode();
-        array.add(portNode("http", "DCode HTTP API (REST + SSE + web UI)",
+        array.add(portNode("http", "EVO-Code HTTP API (REST + SSE + web UI)",
                 eu.kalafatic.dcode.core.port.DCodePorts.HTTP, httpPortActual,
                 httpPortBindAddress.isBlank() ? bindAddress : httpPortBindAddress,
                 "HTTP", httpPortActual > 0, bindAddress));

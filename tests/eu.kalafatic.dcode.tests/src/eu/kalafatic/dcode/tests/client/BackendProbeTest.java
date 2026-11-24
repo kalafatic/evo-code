@@ -75,7 +75,7 @@ class BackendProbeTest {
         var result = probe.probe(mock.baseUrl()).get(10, TimeUnit.SECONDS);
         assertEquals(ConnectionState.ERROR, result.state());
         assertFalse(result.isDCode());
-        assertTrue(result.detail().contains("not a DCode server"), result.detail());
+        assertTrue(result.detail().contains("not an EVO-Code server"), result.detail());
     }
 
     @Test
@@ -84,7 +84,7 @@ class BackendProbeTest {
                 "{\"error\":{\"code\":\"NOT_FOUND\"}}"));
         var result = probe.probe(mock.baseUrl()).get(10, TimeUnit.SECONDS);
         assertEquals(ConnectionState.ERROR, result.state());
-        assertTrue(result.detail().contains("does not provide the DCode API"),
+        assertTrue(result.detail().contains("does not provide the EVO-Code API"),
                 result.detail());
     }
 

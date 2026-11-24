@@ -62,7 +62,7 @@ public final class ConnectionView extends ViewPart implements Ui.Refreshable,
             getViewSite().getActionBars().getToolBarManager().add(new Action("Use local server") {
                 @Override
                 public void run() {
-                    Ui.log("network", "Switching to the local embedded DCode server…");
+                    Ui.log("network", "Switching to the local embedded EVO-Code server…");
                     RuntimeConnection.instance().useLocalServer();
                 }
             });
@@ -131,12 +131,12 @@ public final class ConnectionView extends ViewPart implements Ui.Refreshable,
             text.append("Recovery actions:\n");
             text.append("  · Recheck        re-probe the endpoint (manual retry)\n");
             text.append("  · Connect…       change endpoint or bearer token\n");
-            text.append("  · Scan local…    find Ollama/ENR/DCode services on this machine\n");
+            text.append("  · Scan local…    find Ollama/ENR/EVO-Code services on this machine\n");
             if (RuntimeConnection.instance().hasLocalServer()) {
-                text.append("  · Use local server  connect to the embedded DCode server\n");
+                text.append("  · Use local server  connect to the embedded EVO-Code server\n");
             }
             if (state == ConnectionState.ERROR) {
-                text.append("  · If this is not a DCode endpoint (e.g. ENR or Ollama), "
+                text.append("  · If this is not an EVO-Code endpoint (e.g. ENR or Ollama), "
                         + "correct the server URL.\n");
             }
             text.append('\n');

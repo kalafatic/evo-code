@@ -398,7 +398,7 @@ public final class AiWorkspaceView extends ViewPart implements Ui.Refreshable,
         String harnessId = selectedHarnessId();
         if (!isUsableHarness(harnessId)) {
             append("system", "Harness '" + harnessId + "' is not usable in this build "
-                    + "(the DCode native harness is available).");
+                    + "(the EVO-Code native harness is available).");
             return;
         }
         append("user", "\n▶ " + prompt);

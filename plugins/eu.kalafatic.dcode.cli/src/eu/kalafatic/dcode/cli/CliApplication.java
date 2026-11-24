@@ -88,7 +88,7 @@ public final class CliApplication implements IApplication {
         DCodeApiClient client = new DCodeApiClient(endpoint);
         JsonNode status = client.get("/api/v1/status").get(15, TimeUnit.SECONDS);
         JsonNode ports = client.get("/api/v1/ports").get(15, TimeUnit.SECONDS);
-        out.println("DCode status: ready=" + status.path("ready").asBoolean());
+        out.println("EVO-Code status: ready=" + status.path("ready").asBoolean());
         status.path("stages").fields().forEachRemaining(entry ->
                 out.println("  " + entry.getKey() + ": " + entry.getValue().asText()));
         for (JsonNode port : ports) {
@@ -178,7 +178,7 @@ public final class CliApplication implements IApplication {
     private int cmdConfig() {
         Path dataDir = EndpointResolver.dataDir();
         String endpoint = discoverEndpoint();
-        out.println("DCode configuration:");
+        out.println("EVO-Code configuration:");
         out.println("  data dir:       " + dataDir);
         out.println("  endpoint:       " + (endpoint != null ? endpoint
                 : "(no running server)"));
@@ -193,12 +193,12 @@ public final class CliApplication implements IApplication {
     private int cmdStart() throws Exception {
         String endpoint = discoverEndpoint();
         if (endpoint != null) {
-            out.println("DCode server already running at " + endpoint);
+            out.println("EVO-Code server already running at " + endpoint);
             return 0;
         }
         String launcher = serverLauncher();
         String java = Path.of(System.getProperty("java.home"), "bin", "java").toString();
-        out.println("Starting DCode server: " + launcher);
+        out.println("Starting EVO-Code server: " + launcher);
         List<String> command = new ArrayList<>(List.of(
                 launcher, "-vm", java, "-nosplash", "--launcher.suppressErrors"));
         ProcessBuilder pb = new ProcessBuilder(command);
@@ -219,7 +219,7 @@ public final class CliApplication implements IApplication {
         }
         String ready = waitForReady(30);
         if (ready != null) {
-            out.println("DCode server started at " + ready);
+            out.println("EVO-Code server started at " + ready);
             return 0;
         }
         out.println("Server did not become ready within 30s.");
@@ -229,7 +229,7 @@ public final class CliApplication implements IApplication {
     private int cmdStop() throws Exception {
         String endpoint = discoverEndpoint();
         if (endpoint == null) {
-            out.println("DCode server is not running.");
+            out.println("EVO-Code server is not running.");
             return 1;
         }
         DCodeApiClient client = new DCodeApiClient(endpoint);
@@ -253,7 +253,7 @@ public final class CliApplication implements IApplication {
     }
 
     private void cmdHelp() {
-        out.println("dcode-cli — thin client for the DCode server");
+        out.println("dcode-cli — thin client for the EVO-Code server");
         out.println();
         out.println("Commands:");
         out.println("  status       backend readiness, lifecycle stages and ports");
@@ -263,9 +263,9 @@ public final class CliApplication implements IApplication {
         out.println("  sessions     persisted sessions grouped by workspace");
         out.println("  agents       coding agents with the default marker");
         out.println("  config       effective configuration summary (no secrets)");
-        out.println("  start        start the DCode server (no-op when already running)");
-        out.println("  stop         stop the running DCode server gracefully");
-        out.println("  restart      stop then start the DCode server");
+        out.println("  start        start the EVO-Code server (no-op when already running)");
+        out.println("  stop         stop the running EVO-Code server gracefully");
+        out.println("  restart      stop then start the EVO-Code server");
         out.println("  help         this help");
         out.println();
         out.println("Endpoint discovery: <dataDir>/server-endpoint.json, then");
@@ -335,7 +335,7 @@ public final class CliApplication implements IApplication {
     }
 
     private int unavailable(String command) {
-        out.println("DCode server is not running or cannot be reached.");
+        out.println("EVO-Code server is not running or cannot be reached.");
         out.println("Start it with `dcode-cli start` (or `dcode-headless` as a daemon),");
         out.println("then retry `dcode-cli " + command + "`.");
         return 1;
@@ -390,7 +390,7 @@ public final class CliApplication implements IApplication {
     /** Raised when a read-only command needs a running server that is not reachable. */
     private static final class ServerUnavailableException extends RuntimeException {
         ServerUnavailableException(String command) {
-            super("DCode server is not running or cannot be reached (command: " + command + ")");
+            super("EVO-Code server is not running or cannot be reached (command: " + command + ")");
         }
     }
 }

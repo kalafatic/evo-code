@@ -30,7 +30,7 @@ public final class CoreActivator implements BundleActivator {
         eventBusRegistration = context.registerService(EventBus.class, runtime, null);
         lifecycleRegistration = context.registerService(DCodeLifecycle.class, runtime, null);
         configurationRegistration = context.registerService(ConfigurationService.class, runtime, null);
-        DCodeLog.info("core", "DCode core services registered in OSGi");
+        DCodeLog.info("core", "EVO-Code core services registered in OSGi");
     }
 
     @Override

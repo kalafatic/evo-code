@@ -34,7 +34,7 @@ public final class DesktopActions {
                     control.start();
                 }
             } catch (RuntimeException e) {
-                Ui.log("warning", "Cannot start the local DCode web server: "
+                Ui.log("warning", "Cannot start the local EVO-Code web server: "
                         + e.getMessage());
             }
             String url = control.url();
@@ -42,13 +42,13 @@ public final class DesktopActions {
                 launchBrowser(url);
                 return;
             }
-            Ui.log("error", "The local DCode web server is " + control.state()
+            Ui.log("error", "The local EVO-Code web server is " + control.state()
                     + " and cannot be opened. Check the configuration "
                     + "(webServer.enabled) or use Web Interface ▸ Check Status.");
             return;
         }
-        Ui.log("error", "No DCode web server known — the connected endpoint is "
-                + "not a verified DCode backend and no local server is running. "
+        Ui.log("error", "No EVO-Code web server known — the connected endpoint is "
+                + "not a verified EVO-Code backend and no local server is running. "
                 + "Fix the connection (Window ▸ Connection) first.");
     }
 

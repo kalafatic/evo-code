@@ -63,17 +63,17 @@ public final class CoreRuntime implements EventBus, DCodeLifecycle, Configuratio
             lifecycle.registerAction(LifecycleStage.CORE_SERVICES, "core-log", new DCodeLifecycle.LifecycleAction() {
                 @Override
                 public void start() {
-                    DCodeLog.info("core", "DCode core " + DCodeVersion.VERSION
+                    DCodeLog.info("core", "EVO-Code core " + DCodeVersion.VERSION
                             + " initializing in " + homeDir);
                 }
 
                 @Override
                 public void stop() {
-                    DCodeLog.info("core", "DCode core stopped");
+                    DCodeLog.info("core", "EVO-Code core stopped");
                 }
             });
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to initialize DCode core runtime in "
+            throw new IllegalStateException("Failed to initialize EVO-Code core runtime in "
                     + homeDir, e);
         }
     }

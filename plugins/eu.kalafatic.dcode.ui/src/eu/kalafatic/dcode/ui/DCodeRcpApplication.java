@@ -36,7 +36,7 @@ public final class DCodeRcpApplication implements IApplication {
         } catch (Throwable t) {
             t.printStackTrace();
             MessageDialog.openError(display.getActiveShell(),
-                    "DCode startup failed", String.valueOf(t.getMessage()));
+                    "EVO-Code startup failed", String.valueOf(t.getMessage()));
             return IApplication.EXIT_OK;
         } finally {
             display.dispose();

@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
       id="eu.kalafatic.dcode.feature"
-      label="DCode Feature"
+      label="EVO-Code Feature"
       version="2.6.11.qualifier"
       provider-name="Kalafatic">
 
    <description>
-      DCode — Darwin Code: native AI coding harness platform (Core, Harness, Java
+      EVO-Code — Darwin Code: native AI coding harness platform (Core, Harness, Java
       Tooling, Persistence, Headless Runtime, Web UI, RCP IDE).
    </description>
 

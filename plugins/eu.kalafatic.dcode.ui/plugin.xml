@@ -8,8 +8,8 @@
    </extension>
 
    <extension id="rcp" point="org.eclipse.core.runtime.products">
-      <product application="eu.kalafatic.dcode.ui.application" name="DCode">
-         <property name="appName" value="DCode"/>
+      <product application="eu.kalafatic.dcode.ui.application" name="EVO-Code">
+         <property name="appName" value="EVO-Code"/>
       </product>
    </extension>
 
@@ -17,11 +17,11 @@
       <perspective class="eu.kalafatic.dcode.ui.DCodePerspectiveFactory"
                    fixed="true"
                    id="eu.kalafatic.dcode.ui.perspective"
-                   name="DCode"/>
+                   name="EVO-Code"/>
    </extension>
 
    <extension point="org.eclipse.ui.views">
-      <category id="eu.kalafatic.dcode.ui" name="DCode"/>
+      <category id="eu.kalafatic.dcode.ui" name="EVO-Code"/>
       <view category="eu.kalafatic.dcode.ui"
             class="eu.kalafatic.dcode.ui.views.WorkspaceExplorerView"
             id="eu.kalafatic.dcode.ui.views.workspace"
@@ -115,14 +115,14 @@
       <editor class="eu.kalafatic.dcode.ui.editors.DCodeFileEditor"
               default="false"
               id="eu.kalafatic.dcode.ui.editors.file"
-              name="DCode Source Editor"/>
+              name="EVO-Code Source Editor"/>
       <editor class="eu.kalafatic.dcode.ui.editors.DCodeDiffEditor"
               default="false"
               id="eu.kalafatic.dcode.ui.editors.diff"
-              name="DCode Diff Editor"/>
+              name="EVO-Code Diff Editor"/>
       <editor class="eu.kalafatic.dcode.ui.editors.DCodeMultiPageEditor"
               default="false"
               id="eu.kalafatic.dcode.ui.editors.multi"
-              name="DCode Inference"/>
+              name="EVO-Code Inference"/>
    </extension>
 </plugin>

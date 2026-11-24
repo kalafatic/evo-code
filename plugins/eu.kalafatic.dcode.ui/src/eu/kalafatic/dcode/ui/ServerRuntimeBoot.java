@@ -74,17 +74,17 @@ public final class ServerRuntimeBoot {
                 boolean ok = activateBundle(PLATFORM_BUNDLES[i][0],
                         PLATFORM_BUNDLES[i][1]);
                 if (!ok && (lastOk[i] || pass % 30 == 0)) {
-                    System.err.println("[DCode:boot] platform bundle "
+                    System.err.println("[EVO-Code:boot] platform bundle "
                             + PLATFORM_BUNDLES[i][0] + " is not active");
                 } else if (ok && !lastOk[i] && pass > 1) {
-                    System.out.println("[DCode:boot] platform bundle "
+                    System.out.println("[EVO-Code:boot] platform bundle "
                             + PLATFORM_BUNDLES[i][0] + " active");
                 }
                 lastOk[i] = ok;
             }
             var control = WebServerControlAccess.get();
             if (control != null) {
-                System.out.println("[DCode:boot] embedded DCode server runtime "
+                System.out.println("[EVO-Code:boot] embedded EVO-Code server runtime "
                         + "active; web server state=" + control.state()
                         + (control.isRunning() ? " url=" + control.url() : ""));
                 return;
@@ -120,7 +120,7 @@ public final class ServerRuntimeBoot {
             }
             return bundle.getState() == Bundle.ACTIVE;
         } catch (Exception e) {
-            System.err.println("[DCode:boot] cannot activate " + symbolicName
+            System.err.println("[EVO-Code:boot] cannot activate " + symbolicName
                     + ": " + e);
             return false;
         }

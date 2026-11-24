@@ -139,7 +139,7 @@ public final class ConsoleView extends ViewPart implements Ui.Refreshable {
 
         status = new Label(root, SWT.NONE);
         status.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        status.setText("DCode console ready.");
+        status.setText("EVO-Code console ready.");
 
         log = new StyledText(root, SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL | SWT.READ_ONLY);
         log.setLayoutData(new GridData(GridData.FILL_BOTH));

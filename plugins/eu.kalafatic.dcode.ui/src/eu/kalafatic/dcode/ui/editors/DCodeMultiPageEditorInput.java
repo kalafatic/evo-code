@@ -17,7 +17,7 @@ import org.eclipse.ui.IPersistableElement;
 public final class DCodeMultiPageEditorInput implements IEditorInput {
 
     /** Stable display identity of the main editor input. */
-    public static final String NAME = "DCode Inference";
+    public static final String NAME = "EVO-Code Inference";
 
     @Override
     public boolean exists() {
@@ -41,7 +41,7 @@ public final class DCodeMultiPageEditorInput implements IEditorInput {
 
     @Override
     public String getToolTipText() {
-        return "DCode harness workspace: web application + settings";
+        return "EVO-Code harness workspace: web application + settings";
     }
 
     @Override

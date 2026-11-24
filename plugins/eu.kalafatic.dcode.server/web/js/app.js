@@ -43,7 +43,7 @@ window.DCodeApp = (function () {
         if (build) { build.textContent = window.DCODE_FRONTEND_BUILD; }
         const sbBuild = document.getElementById('sb-build');
         if (sbBuild) { sbBuild.textContent = window.DCODE_FRONTEND_BUILD; }
-        console.log('DCode frontend build ' + window.DCODE_FRONTEND_BUILD
+        console.log('EVO-Code frontend build ' + window.DCODE_FRONTEND_BUILD
             + ' (' + location.origin + ')');
         probeBackend();
     }
@@ -110,16 +110,16 @@ window.DCodeApp = (function () {
             };
             if (identity.application !== 'DCODE') {
                 setConnectionState('ERROR', identity,
-                    'The endpoint is not a DCode server (it reports: '
+                    'The endpoint is not an EVO-Code server (it reports: '
                     + (identity.application || 'unrecognized HTTP service')
                     + '). Correct the server URL.');
                 logConsole('error', 'Connection failed — the endpoint does not '
-                    + 'provide the DCode API.');
+                    + 'provide the EVO-Code API.');
                 return;
             }
             if (identity.ready) {
                 setConnectionState('READY', identity, '');
-                logConsole('success', 'DCode backend ready: ' + identity.application
+                logConsole('success', 'EVO-Code backend ready: ' + identity.application
                     + ' ' + identity.version);
                 logConsole('info', 'Loading workspaces and runtimes.');
                 renderView(state.view);
@@ -128,19 +128,19 @@ window.DCodeApp = (function () {
             }
             if (identity.status === 'UP') {
                 setConnectionState('INITIALIZING', identity,
-                    'DCode backend is starting up.');
-                logConsole('info', 'DCode backend is starting up (ready=false).');
+                    'EVO-Code backend is starting up.');
+                logConsole('info', 'EVO-Code backend is starting up (ready=false).');
             } else {
                 setConnectionState('DEGRADED', identity,
-                    'DCode backend reports degraded readiness.');
-                logConsole('warning', 'DCode backend reports degraded readiness: '
+                    'EVO-Code backend reports degraded readiness.');
+                logConsole('warning', 'EVO-Code backend reports degraded readiness: '
                     + identity.status);
             }
         }).catch((e) => {
             let diagnostic;
             if (e.status === 404) {
-                diagnostic = 'The endpoint does not provide the DCode API '
-                    + '(/api/v1/health is missing). Is this a DCode server?';
+                diagnostic = 'The endpoint does not provide the EVO-Code API '
+                    + '(/api/v1/health is missing). Is this an EVO-Code server?';
             } else if (e.status === 401 || e.status === 403) {
                 diagnostic = 'Authentication required — configure the server token.';
             } else {
@@ -166,13 +166,13 @@ window.DCodeApp = (function () {
         connBtn.onclick = () => openModal('connection-details');
     }
 
-    // Theme toggle: UPM design standard light/dark pair. Default dark
-    // (matching the UPM runtime default); persisted locally per browser.
+    // Theme toggle: UPM design standard light/dark pair. Default light
+    // (matching the application default); persisted locally per browser.
     function applyTheme() {
         const saved = (function () {
             try { return localStorage.getItem('dcode.theme'); } catch (e) { return null; }
         })();
-        const theme = saved === 'light' || saved === 'dark' ? saved : 'dark';
+        const theme = saved === 'light' || saved === 'dark' ? saved : 'light';
         document.documentElement.dataset.theme = theme;
         const btn = document.getElementById('btn-theme');
         if (btn) {
@@ -349,7 +349,7 @@ window.DCodeApp = (function () {
         let cause;
         if (status === 'HTTP 404' || status === 'HTTP 405') {
             cause = 'client/server API contract mismatch or wrong endpoint '
-                + '(is this a DCode server?)';
+                + '(is this an EVO-Code server?)';
         } else if (status === 'HTTP 401' || status === 'HTTP 403') {
             cause = 'authentication required';
         } else if (status.startsWith('HTTP 5')) {

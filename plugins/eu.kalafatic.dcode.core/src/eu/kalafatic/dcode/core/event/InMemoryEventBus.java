@@ -43,7 +43,7 @@ public final class InMemoryEventBus implements EventBus {
         this.dispatcher = dispatcher;
         this.errorConsumer = errorConsumer != null
                 ? errorConsumer
-                : t -> System.err.println("[DCode] event handler failure: " + t);
+                : t -> System.err.println("[EVO-Code] event handler failure: " + t);
     }
 
     @Override

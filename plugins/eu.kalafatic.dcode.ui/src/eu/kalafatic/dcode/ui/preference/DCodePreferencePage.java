@@ -14,6 +14,7 @@ import org.eclipse.core.runtime.preferences.DefaultScope;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 
 import eu.kalafatic.dcode.core.config.CoreConfiguration;
+import eu.kalafatic.dcode.ui.UiPreferences;
 
 /**
  * DCode runtime configuration preference page.
@@ -43,7 +44,7 @@ public class DCodePreferencePage extends FieldEditorPreferencePage {
     public DCodePreferencePage() {
         super(GRID);
         prefs = InstanceScope.INSTANCE.getNode("eu.kalafatic.dcode");
-        setDescription("DCode runtime configuration: LLM, harness, provider, and agent settings");
+        setDescription("EVO-Code runtime configuration: LLM, harness, provider, and agent settings");
     }
 
     @Override
@@ -65,6 +66,17 @@ public class DCodePreferencePage extends FieldEditorPreferencePage {
     }
 
     @Override
+    protected void performDefaults() {
+        super.performDefaults();
+        // Restore application defaults: clear every remembered form value.
+        UiPreferences.resetAll();
+        MessageBox box = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
+        box.setMessage("Application defaults restored — remembered form values "
+                + "(runtimes, models, repository paths, tool arguments) cleared.");
+        box.open();
+    }
+
+    @Override
     public boolean performOk() {
         // Persist the configuration values to Eclipse preferences
         if (nodeIdEditor != null) prefs.put(NODE_ID, nodeIdEditor.getStringValue());
@@ -78,7 +90,7 @@ public class DCodePreferencePage extends FieldEditorPreferencePage {
         Display.getDefault().asyncExec(() -> {
             try {
                 MessageBox box = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
-                box.setMessage("DCode configuration saved successfully");
+                box.setMessage("EVO-Code configuration saved successfully");
                 box.open();
             } catch (Exception e) {
                 e.printStackTrace();
