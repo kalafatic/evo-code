@@ -82,9 +82,7 @@ public final class HttpLlmSupport {
         try {
             response = client.send(builder.build(), HttpResponse.BodyHandlers.ofInputStream());
         } catch (IOException e) {
-            throw new ProviderException("Provider request failed: "
-                    + (e.getMessage() != null && !e.getMessage().isBlank()
-                    ? e.getMessage() : e.getClass().getSimpleName()));
+            throw new ProviderException(describeIoFailure(url, e));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ProviderException("Provider request interrupted");
@@ -316,14 +314,37 @@ public final class HttpLlmSupport {
         }
     }
 
+    /**
+     * Turns an I/O failure into an actionable diagnostic (connection refused / timeout /
+     * unknown host / TLS / other), including the endpoint. The UI surfaces this message
+     * directly, so it must say what failed and what to check.
+     */
+    private static String describeIoFailure(String url, IOException e) {
+        String reason;
+        if (e instanceof java.net.ConnectException) {
+            reason = "connection refused — the runtime/provider is not running or the "
+                    + "endpoint is wrong";
+        } else if (e instanceof java.net.http.HttpConnectTimeoutException) {
+            reason = "connection timed out — the runtime/provider is unreachable";
+        } else if (e instanceof java.net.UnknownHostException) {
+            reason = "unknown host — check the endpoint hostname";
+        } else if (e instanceof java.net.SocketTimeoutException) {
+            reason = "request timed out — the model may still be loading or overloaded";
+        } else if (e instanceof javax.net.ssl.SSLException) {
+            reason = "TLS/SSL failure — check the endpoint scheme and certificate";
+        } else {
+            reason = e.getMessage() != null && !e.getMessage().isBlank()
+                    ? e.getMessage() : e.getClass().getSimpleName();
+        }
+        return "Provider request failed at " + url + " (" + reason + ")";
+    }
+
     private JsonNode send(HttpRequest request) {
         HttpResponse<String> response;
         try {
             response = client.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (IOException e) {
-            throw new ProviderException("Provider request failed: "
-                    + (e.getMessage() != null && !e.getMessage().isBlank()
-                    ? e.getMessage() : e.getClass().getSimpleName()));
+            throw new ProviderException(describeIoFailure(request.uri().toString(), e));
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ProviderException("Provider request interrupted");

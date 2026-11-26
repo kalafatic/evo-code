@@ -322,6 +322,15 @@ public final class ToolCallingAgentLoop {
 
     private JsonNode parseAction(String text) {
         String trimmed = text.strip();
+        // DeepSeek (and DeepSeek-routed) models emit tool calls in their native DSML
+        // markup rather than the plain JSON the harness instructs. Normalize DSML to
+        // the same {"tool": ..., "arguments": {...}} shape before JSON parsing.
+        if (trimmed.contains("<｜DSML｜")) {
+            JsonNode dsml = parseDsml(trimmed);
+            if (dsml != null) {
+                return dsml;
+            }
+        }
         String json = trimmed;
         int start = trimmed.indexOf('{');
         int end = trimmed.lastIndexOf('}');
@@ -339,6 +348,82 @@ public final class ToolCallingAgentLoop {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    /**
+     * Parses DeepSeek DSML function-call markup
+     * ({@code <｜DSML｜ invoke name="tool">…<parameter name="arguments">JSON</parameter>})
+     * into the harness action shape. Returns {@code null} when the text is not a
+     * DSML tool invocation (e.g. a DSML thinking block or final answer).
+     */
+    private JsonNode parseDsml(String text) {
+        String invokeMarker = "<｜DSML｜ invoke name=\"";
+        int invokeStart = text.indexOf(invokeMarker);
+        if (invokeStart < 0) {
+            return null;
+        }
+        int nameStart = invokeStart + invokeMarker.length();
+        int nameEnd = text.indexOf('"', nameStart);
+        if (nameEnd < 0) {
+            return null;
+        }
+        String toolName = text.substring(nameStart, nameEnd).trim();
+        if (toolName.isBlank()) {
+            return null;
+        }
+        JsonNode arguments = parseDsmlArguments(text);
+        com.fasterxml.jackson.databind.node.ObjectNode node = mapper.createObjectNode();
+        node.put("tool", toolName);
+        node.set("arguments", arguments);
+        return node;
+    }
+
+    /** Extracts the DSML {@code arguments} parameter (a JSON object) or individual params. */
+    private JsonNode parseDsmlArguments(String text) {
+        String marker = "<｜DSML｜ parameter name=\"arguments\"";
+        int paramStart = text.indexOf(marker);
+        if (paramStart >= 0) {
+            int valueStart = text.indexOf('>', paramStart);
+            if (valueStart >= 0) {
+                int valueEnd = text.indexOf("</｜DSML｜ parameter>", valueStart);
+                if (valueEnd < 0) {
+                    valueEnd = text.length();
+                }
+                String argJson = text.substring(valueStart + 1, valueEnd).trim();
+                try {
+                    JsonNode node = mapper.readTree(argJson);
+                    if (node != null && node.isObject()) {
+                        return node;
+                    }
+                } catch (Exception ignored) {
+                    // fall through to individual parameters
+                }
+            }
+        }
+        // Individual <parameter name="x" string="...">value</parameter> entries.
+        com.fasterxml.jackson.databind.node.ObjectNode params = mapper.createObjectNode();
+        int from = 0;
+        String paramMarker = "<｜DSML｜ parameter name=\"";
+        while ((from = text.indexOf(paramMarker, from)) >= 0) {
+            int nameStart = from + paramMarker.length();
+            int nameEnd = text.indexOf('"', nameStart);
+            if (nameEnd < 0) {
+                break;
+            }
+            String name = text.substring(nameStart, nameEnd);
+            int valueStart = text.indexOf('>', nameEnd);
+            if (valueStart < 0) {
+                break;
+            }
+            int valueEnd = text.indexOf("</｜DSML｜ parameter>", valueStart);
+            if (valueEnd < 0) {
+                break;
+            }
+            String value = text.substring(valueStart + 1, valueEnd).trim();
+            params.put(name, value);
+            from = valueEnd + 1;
+        }
+        return params;
     }
 
     private Map<String, Object> toArguments(JsonNode node) {

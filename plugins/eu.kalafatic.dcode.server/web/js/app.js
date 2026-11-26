@@ -37,6 +37,7 @@ window.DCodeApp = (function () {
         wireNavigation();
         wireBottomTabs();
         wireConsoleControls();
+        wireChat();
         renderView('workspace');
         applyAuth();
         const build = document.getElementById('frontend-build');
@@ -124,6 +125,11 @@ window.DCodeApp = (function () {
                 logConsole('info', 'Loading workspaces and runtimes.');
                 renderView(state.view);
                 refreshRuntimeChip();
+                // Make the chat immediately discoverable: the first time the backend
+                // becomes ready with no tab open, show the Chat tab.
+                if (!state.activeTab) {
+                    openChat();
+                }
                 return;
             }
             if (identity.status === 'UP') {
@@ -388,6 +394,39 @@ window.DCodeApp = (function () {
             renderActivity(content);
         }
         refreshRuntimeChip();
+    }
+
+    /** Opens (or focuses) the prominent Chat tab in the main work area. */
+    function openChat() {
+        const id = 'chat';
+        if (!state.tabs.has(id)) {
+            state.tabs.set(id, {
+                title: '💬 Chat',
+                render: () => window.DCodeChat.render()
+            });
+        }
+        state.activeTab = id;
+        renderTabs();
+    }
+
+    /** Wires the top-bar Chat button and the left-nav Chat entry. */
+    function wireChat() {
+        const btn = document.getElementById('btn-chat');
+        if (btn) {
+            btn.onclick = () => openChat();
+        }
+        const nav = document.getElementById('nav-chat');
+        if (nav) {
+            nav.onclick = () => {
+                document.querySelectorAll('.nav-btn').forEach((b) => b.classList.remove('active'));
+                nav.classList.add('active');
+                openChat();
+            };
+        }
+        const placeholder = document.getElementById('placeholder-chat');
+        if (placeholder) {
+            placeholder.onclick = () => openChat();
+        }
     }
 
     /** Top-bar indicator of the default runtime (shared state, server-authoritative). */

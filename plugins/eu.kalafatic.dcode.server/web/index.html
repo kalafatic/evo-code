@@ -19,8 +19,9 @@
         <span id="top-runtime" class="top-item">no default runtime</span>
     </div>
     <div class="topbar-right">
-        <span id="frontend-build" class="build-badge" title="Frontend revision">web r4</span>
+        <span id="frontend-build" class="build-badge" title="Frontend revision">web r5</span>
         <span id="connection-status" class="conn conn-disconnected" title="Server connection">● offline</span>
+        <button id="btn-chat" class="btn btn-chat" title="Open the chat / inference view (Ctrl+Enter)">💬 Chat</button>
         <button id="btn-conn" class="btn btn-small" title="Connection state and diagnostics">connection</button>
         <button id="btn-auth" class="btn btn-small" title="Set server token">auth</button>
         <a id="btn-settings" class="btn btn-small" href="settings.html" title="Providers, models, runtimes, projects">settings</a>
@@ -32,6 +33,10 @@
 <div id="main">
     <aside id="left-panel">
         <nav id="left-nav">
+            <div class="nav-group-label">Assistant</div>
+            <div class="nav-group">
+                <button class="nav-btn nav-btn-chat" id="nav-chat" title="Ask the model (opens a chat tab)">💬 Chat</button>
+            </div>
             <div class="nav-group-label">Workspace</div>
             <div class="nav-group">
                 <button class="nav-btn active" data-view="workspace">Workspace</button>
@@ -53,10 +58,10 @@
         <div id="tabs-bar"></div>
         <div id="tab-content">
             <div id="placeholder" class="placeholder">
-                <div class="placeholder-title">EVO-Code Web</div>
+                <div class="placeholder-title">EVO-Code</div>
                 <div class="placeholder-text">
-                    Select a workspace and session to start developing.<br>
-                    The native Eclipse JDT/PDE tooling is available in the Java Tools view.
+                    Ask the model anything, or open a workspace to run coding tasks.<br>
+                    <button id="placeholder-chat" class="btn btn-chat" style="margin-top:14px">💬 Start chatting</button>
                 </div>
             </div>
         </div>
@@ -90,7 +95,7 @@
     <span id="sb-version" class="sb-item">—</span>
     <span id="sb-connection" class="sb-item">offline</span>
     <span class="spacer"></span>
-    <span id="sb-build" class="sb-item">web r4</span>
+    <span id="sb-build" class="sb-item">web r5</span>
 </footer>
 
 <div id="modal-root"></div>
@@ -106,6 +111,7 @@
 <script src="js/tooling.js"></script>
 <script src="js/runtimes.js"></script>
 <script src="js/models.js"></script>
+<script src="js/chat.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

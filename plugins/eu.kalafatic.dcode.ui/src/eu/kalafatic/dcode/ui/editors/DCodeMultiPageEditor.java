@@ -87,11 +87,16 @@ public final class DCodeMultiPageEditor extends MultiPageEditorPart {
         webComposite.setLayout(new GridLayout(1, false));
 
         Composite webBar = new Composite(webComposite, SWT.NONE);
-        webBar.setLayout(new GridLayout(2, false));
+        webBar.setLayout(new GridLayout(3, false));
         webBar.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         webStatus = new Label(webBar, SWT.NONE);
         webStatus.setText("Connecting to the EVO-Code web application…");
         webStatus.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        Button openBrowser = new Button(webBar, SWT.PUSH);
+        openBrowser.setText("Open in Browser");
+        openBrowser.setToolTipText("Open the full EVO-Code web UI in your system browser");
+        openBrowser.addListener(SWT.Selection,
+                event -> eu.kalafatic.dcode.ui.DesktopActions.openWebInterface());
         webReload = new Button(webBar, SWT.PUSH);
         webReload.setText("Reload");
         webReload.setToolTipText("Re-check the EVO-Code web application and reload it");

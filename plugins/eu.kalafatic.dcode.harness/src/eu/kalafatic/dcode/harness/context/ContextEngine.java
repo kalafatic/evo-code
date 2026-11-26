@@ -65,7 +65,7 @@ public final class ContextEngine {
         prompt.append("## Rules\n");
         prompt.append("- All file paths are workspace-relative. Never access files outside "
                 + "the workspace.\n");
-        prompt.append("- Read-only repositories must never be modified; git_commit on them fails.\n");
+        prompt.append("- Read-only repositories must never be modified.\n");
         prompt.append("- Verify your changes: run the build and tests where available, and "
                 + "report real results in your final message.\n");
         prompt.append("- Do not commit or push unless explicitly instructed.\n");

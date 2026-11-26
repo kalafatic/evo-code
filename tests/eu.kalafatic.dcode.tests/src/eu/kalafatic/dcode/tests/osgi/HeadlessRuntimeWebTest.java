@@ -60,7 +60,7 @@ class HeadlessRuntimeWebTest {
         assertNotNull(serverBundle, "server bundle must be present");
         for (String asset : new String[]{
                 "web/index.html", "web/css/app.css", "web/js/api.js", "web/js/sse.js",
-                "web/js/app.js", "web/js/explorer.js", "web/js/editor.js",
+                "web/js/app.js", "web/js/chat.js", "web/js/explorer.js", "web/js/editor.js",
                 "web/js/sessions.js", "web/js/tooling.js", "web/js/diff.js"}) {
             assertNotNull(serverBundle.getEntry(asset), "missing web asset: " + asset);
         }

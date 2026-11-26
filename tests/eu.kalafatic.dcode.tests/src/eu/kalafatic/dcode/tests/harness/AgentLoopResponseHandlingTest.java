@@ -19,6 +19,7 @@ import eu.kalafatic.dcode.harness.session.InMemorySessionService;
 import eu.kalafatic.dcode.harness.tool.DefaultToolRegistry;
 import eu.kalafatic.dcode.harness.tool.ToolEngine;
 import eu.kalafatic.dcode.harness.tools.GitStatusTool;
+import eu.kalafatic.dcode.harness.tools.WriteFileTool;
 import eu.kalafatic.dcode.repositories.git.JGitEngine;
 import eu.kalafatic.dcode.repositories.service.InMemoryWorkspaceService;
 import eu.kalafatic.dcode.repositories.service.RepositoryOperations;
@@ -73,6 +74,7 @@ class AgentLoopResponseHandlingTest {
 
         DefaultToolRegistry toolRegistry = new DefaultToolRegistry();
         toolRegistry.register(new GitStatusTool());
+        toolRegistry.register(new WriteFileTool());
         ToolEngine toolEngine = new ToolEngine(toolRegistry, bus);
 
         sessionService = new InMemorySessionService(bus, workspaceService);
@@ -115,6 +117,29 @@ class AgentLoopResponseHandlingTest {
             }
         }
         assertTrue(hasProse);
+    }
+
+    @Test
+    void dsmlToolCallIsParsedAndExecuted() throws Exception {
+        // DeepSeek-style DSML function-call markup must be normalized to the harness
+        // action shape and executed (regression: "neither a tool call nor a final
+        // message" when a DeepSeek-routed model fell back to DSML).
+        providers.register(new FakeLlmProvider(
+                "<｜DSML｜ calls><｜DSML｜ invoke name=\"write_file\">"
+                        + "<｜DSML｜ parameter name=\"arguments\" string=\"false\">"
+                        + "{\"path\":\"dsml.txt\",\"content\":\"hello from dsml\"}"
+                        + "</｜DSML｜ parameter></｜DSML｜ invoke></｜DSML｜ calls>",
+                "{\"final\":\"wrote the file\"}"));
+        var session = sessionService.createSession(new SessionService.CreateSessionRequest(
+                "dsml-tool", workspace.id(), "fake", "fake-model", null, null));
+        executor.submit(session.getId(), "write a file");
+        var finalSession = awaitTerminal(session.getId());
+        assertEquals(SessionState.COMPLETED, finalSession.getState());
+        Path written = workspace.rootPath() != null
+                ? Path.of(workspace.rootPath()).resolve("dsml.txt")
+                : temp.resolve("workspace").resolve("dsml.txt");
+        assertTrue(Files.exists(written), "DSML tool call must write the file");
+        assertEquals("hello from dsml", Files.readString(written));
     }
 
     private eu.kalafatic.dcode.core.model.Session awaitTerminal(String sessionId)

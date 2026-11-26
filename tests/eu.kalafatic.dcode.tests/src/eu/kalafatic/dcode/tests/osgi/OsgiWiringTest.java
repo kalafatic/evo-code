@@ -104,7 +104,10 @@ class OsgiWiringTest {
         assertTrue(registry.tools().size() >= 10, "expected the built-in tool set, got "
                 + registry.tools().size());
         assertTrue(registry.find("write_file").isPresent());
-        assertTrue(registry.find("git_commit").isPresent());
+        // Git tools (git_status/git_diff/git_commit) were removed from the harness to
+        // keep the project filesystem-oriented (sync-241126-1); the core file/shell/build
+        // tools remain the harness surface.
+        assertTrue(registry.find("shell").isPresent());
         assertTrue(registry.find("run_build").isPresent());
     }
 

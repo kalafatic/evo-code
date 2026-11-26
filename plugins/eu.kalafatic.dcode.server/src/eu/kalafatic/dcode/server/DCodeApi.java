@@ -50,7 +50,7 @@ public final class DCodeApi {
 
     /** Frontend revision the web UI reports; must match web/js/api.js
      *  DCODE_FRONTEND_BUILD (asserted by FrontendDeliveryTest). */
-    public static final String FRONTEND_VERSION = "web-20261122-r4";
+    public static final String FRONTEND_VERSION = "web-20261124-r5";
 
     private final Supplier<SessionService> sessionSupplier;
     private final Supplier<WorkspaceService> workspaceSupplier;

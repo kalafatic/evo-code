@@ -26,11 +26,12 @@ import eu.kalafatic.dcode.server.DCodeApi;
 class FrontendDeliveryTest {
 
     private static final List<String> FILES = List.of(
-            "web/index.html", "web/js/api.js", "web/js/app.js", "web/js/markdown.js",
-            "web/js/runtimes.js", "web/js/sessions.js", "web/css/app.css",
-            "web/settings.html", "web/css/settings.css", "web/help.html");
+            "web/index.html", "web/js/api.js", "web/js/app.js", "web/js/chat.js",
+            "web/js/markdown.js", "web/js/runtimes.js", "web/js/sessions.js",
+            "web/css/app.css", "web/settings.html", "web/css/settings.css",
+            "web/help.html");
 
-    private static final String BUILD = "web-20261122-r4";
+    private static final String BUILD = "web-20261124-r5";
 
     private Path sourceRoot() {
         Path module = Path.of("").toAbsolutePath();
