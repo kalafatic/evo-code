@@ -20,7 +20,7 @@ public final class EndpointResolver {
 
     public static final String DEFAULT_HOST = "127.0.0.1";
     /** Family default HTTP port (DCode 58xxx block). */
-    public static final int DEFAULT_PORT = 58080;
+    public static final int DEFAULT_PORT = 48080;
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 

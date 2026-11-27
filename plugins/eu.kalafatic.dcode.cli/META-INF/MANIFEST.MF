@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: DCode CLI
 Bundle-SymbolicName: eu.kalafatic.dcode.cli;singleton:=true
 Bundle-Version: 2.6.11.qualifier
-Bundle-RequiredExecutionEnvironment: JavaSE-21
+Bundle-RequiredExecutionEnvironment: JavaSE-25
 Bundle-Vendor: Kalafatic
 Bundle-ActivationPolicy: lazy
 Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=21))"

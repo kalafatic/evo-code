@@ -529,6 +529,13 @@ window.DCodeApp = (function () {
                 refreshSessionMessages();
             }
         }
+        // Notify shell widgets (e.g. the diff workspace) so they can refresh their
+        // server-authoritative view in lockstep with AI activity.
+        try {
+            document.dispatchEvent(new CustomEvent('dcode:session-activity', {
+                detail: { sessionId: state.session ? state.session.id : null, type: type }
+            }));
+        } catch (e) { /* CustomEvent unsupported — non-fatal */ }
     }
 
     function refreshSessionDetail() {

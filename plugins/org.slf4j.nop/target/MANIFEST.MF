@@ -2,10 +2,10 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SLF4J NOP Provider (DCode)
 Bundle-SymbolicName: org.slf4j.nop
-Bundle-Version: 2.6.11.202611251111
+Bundle-Version: 2.6.11.202611271801
 Bundle-Vendor: DCode
 Fragment-Host: slf4j.api
-Bundle-RequiredExecutionEnvironment: JavaSE-17
+Bundle-RequiredExecutionEnvironment: JavaSE-25
 Import-Package: org.slf4j;version="[2.0.0,3)",org.slf4j.helpers;version=
  "[2.0.0,3)",org.slf4j.spi;version="[2.0.0,3)"
 Bundle-ClassPath: .,lib/slf4j-nop-2.0.18.jar

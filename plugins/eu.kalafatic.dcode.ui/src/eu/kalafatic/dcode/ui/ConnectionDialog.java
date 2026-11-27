@@ -37,7 +37,7 @@ public final class ConnectionDialog extends Dialog {
         endpointText = new Text(area, SWT.BORDER);
         endpointText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         endpointText.setText(RuntimeConnection.instance().endpoint() != null
-                ? RuntimeConnection.instance().endpoint() : "http://127.0.0.1:58080");
+                ? RuntimeConnection.instance().endpoint() : "http://127.0.0.1:48080");
         endpointText.setToolTipText("Leave the local endpoint to use the embedded "
                 + "runtime; set a remote URL to connect to an independent headless "
                 + "EVO-Code server (not an ENR/Ollama endpoint).");

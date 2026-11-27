@@ -68,11 +68,10 @@ public final class ModelManagementClient {
                     ? configured.substring(0, configured.length() - 1) : configured;
         }
         // Family convention (mirror of RuntimeManager.detectEnrEndpoint): when no
-        // explicit endpoint is configured, probe the well-known ENR endpoints —
-        // standalone 8111, EVO-embedded 28780 — and use a reachable one. Local
-        // probes fail fast (connection refused), so startup is never delayed.
-        for (String candidate : List.of("http://127.0.0.1:8111",
-                "http://127.0.0.1:28780")) {
+        // explicit endpoint is configured, probe the well-known ENR API endpoint
+        // (28780) and use it when reachable. Local probes fail fast (connection
+        // refused), so startup is never delayed.
+        for (String candidate : EnrProvider.WELL_KNOWN_ENDPOINTS) {
             if (enrAnswers(candidate)) {
                 return candidate;
             }

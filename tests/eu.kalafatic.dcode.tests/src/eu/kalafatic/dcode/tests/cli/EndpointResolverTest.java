@@ -23,30 +23,30 @@ class EndpointResolverTest {
     @Test
     void prefersPersistedEndpointThenConfigThenDefault() throws Exception {
         Files.writeString(temp.resolve("server-endpoint.json"),
-                "{\"host\":\"127.0.0.1\",\"port\":58123,\"pid\":1,\"boundAt\":0}");
-        Files.writeString(temp.resolve("dcode-config.json"), "{\"httpPort\": 58099}");
-        assertEquals(List.of("http://127.0.0.1:58123",
-                        "http://127.0.0.1:58099", "http://127.0.0.1:58080"),
+                "{\"host\":\"127.0.0.1\",\"port\":48123,\"pid\":1,\"boundAt\":0}");
+        Files.writeString(temp.resolve("dcode-config.json"), "{\"httpPort\": 48099}");
+        assertEquals(List.of("http://127.0.0.1:48123",
+                        "http://127.0.0.1:48099", "http://127.0.0.1:48080"),
                 EndpointResolver.candidates(temp));
     }
 
     @Test
     void fallsBackToConfigThenDefaultWithoutEndpointFile() throws Exception {
-        Files.writeString(temp.resolve("dcode-config.json"), "{\"httpPort\": 58099}");
-        assertEquals(List.of("http://127.0.0.1:58099", "http://127.0.0.1:58080"),
+        Files.writeString(temp.resolve("dcode-config.json"), "{\"httpPort\": 48099}");
+        assertEquals(List.of("http://127.0.0.1:48099", "http://127.0.0.1:48080"),
                 EndpointResolver.candidates(temp));
     }
 
     @Test
     void usesDefaultWhenNothingPersisted() {
-        assertEquals(List.of("http://127.0.0.1:58080"),
+        assertEquals(List.of("http://127.0.0.1:48080"),
                 EndpointResolver.candidates(temp));
     }
 
     @Test
     void malformedEndpointFileIsIgnored() throws Exception {
         Files.writeString(temp.resolve("server-endpoint.json"), "not-json");
-        assertEquals(List.of("http://127.0.0.1:58080"),
+        assertEquals(List.of("http://127.0.0.1:48080"),
                 EndpointResolver.candidates(temp));
     }
 
@@ -54,7 +54,7 @@ class EndpointResolverTest {
     void endpointFileWithNoPortIsIgnored() throws Exception {
         Files.writeString(temp.resolve("server-endpoint.json"),
                 "{\"host\":\"127.0.0.1\"}");
-        assertEquals(List.of("http://127.0.0.1:58080"),
+        assertEquals(List.of("http://127.0.0.1:48080"),
                 EndpointResolver.candidates(temp));
     }
 }

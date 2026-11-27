@@ -28,9 +28,9 @@
 
    <splash
          location="eu.kalafatic.dcode.ui"
-         startupProgressRect="48,352,555,4"
-         startupMessageRect="48,332,555,8"
-         startupForegroundColor="8FA5FF"/>
+         startupProgressRect="212,348,350,2"
+         startupMessageRect="212,335,350,5"
+         startupForegroundColor="FF0000"/>
 
    <features>
       <feature id="eu.kalafatic.dcode.feature"/>

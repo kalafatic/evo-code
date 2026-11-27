@@ -410,7 +410,7 @@ public final class RuntimeConnection {
             return "http://127.0.0.1:" + port;
         }
         localMode = false;
-        return "http://127.0.0.1:58080";
+        return "http://127.0.0.1:48080";
     }
 
     /** Reads the token from Eclipse secure storage, falling back to preferences. */

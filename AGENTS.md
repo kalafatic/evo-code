@@ -71,6 +71,6 @@ repositories.
 
 ## 7. Port conventions (family standard, confirmed)
 
-DCode occupies the 58xxx range: HTTP 58080 (fallback range 500), management 58380, aux 58680.
-DStudio owns the 48xxx block (TEIP 48080); both products run simultaneously without collision.
+DCode occupies the 48xxx range: HTTP 48080 (fallback range 500), management 48380, aux 48680.
+DStudio owns the 58xxx block (TEIP 58080); both products run simultaneously without collision.
 Configured values always win; occupied ports fall back through `PortAllocator`.

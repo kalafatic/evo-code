@@ -36,6 +36,16 @@ import java.util.function.Supplier;
 public final class EnrProvider implements RuntimeAdapter {
 
     public static final String DEFAULT_BASE_URL = "http://127.0.0.1:28780";
+
+    /**
+     * Well-known local ENR API endpoints in detection order. The authoritative
+     * ENR API port is 28780 for every family application; port 8111 is retired.
+     * Single source of truth — referenced by runtime detection, endpoint
+     * re-check, the model-management client and the local runtime scanner, so no
+     * caller hardcodes a port.
+     */
+    public static final List<String> WELL_KNOWN_ENDPOINTS = List.of(DEFAULT_BASE_URL);
+
     public static final String DEFAULT_PROVIDER_ID = "enr";
     public static final String RUNTIME_TYPE_ENR = "enr";
 

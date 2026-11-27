@@ -79,9 +79,9 @@ public final class RuntimeManager implements RuntimeRegistry, ProviderRegistry {
     }
 
     /**
-     * Existing installations keep the ENR registration at the historical default
-     * (28780). When no explicit override is configured and the historical default is
-     * unreachable while the standalone ENR port (8111) answers, the registration is
+     * Existing installations keep the ENR registration at the authoritative default
+     * (28780). When no explicit override is configured and the default is
+     * unreachable while a known ENR API endpoint answers, the registration is
      * migrated automatically — runtime discovery works without manual repair.
      */
     private void recheckEnrEndpoint() {
@@ -95,8 +95,7 @@ public final class RuntimeManager implements RuntimeRegistry, ProviderRegistry {
                     || !EnrProvider.DEFAULT_BASE_URL.equals(info.endpoint())) {
                 return;
             }
-            for (String candidate : List.of("http://127.0.0.1:8111",
-                    "http://127.0.0.1:28780")) {
+            for (String candidate : EnrProvider.WELL_KNOWN_ENDPOINTS) {
                 if (candidate.equals(info.endpoint()) || !enrAnswers(candidate)) {
                     continue;
                 }
@@ -140,16 +139,15 @@ public final class RuntimeManager implements RuntimeRegistry, ProviderRegistry {
     }
 
     /**
-     * Probes the well-known ENR endpoints (standalone 8111, EVO-embedded 28780) and
-     * selects a reachable one; falls back to the default when none responds. A local
-     * probe fails fast (connection refused), so startup is never meaningfully delayed.
+     * Probes the well-known ENR API endpoints (authoritative 28780) and selects a
+     * reachable one; falls back to the default when none responds. A local probe
+     * fails fast (connection refused), so startup is never meaningfully delayed.
      */
     private static String detectEnrEndpoint() {
-        for (String candidate : List.of("http://127.0.0.1:8111",
-                "http://127.0.0.1:28780")) {
+        for (String candidate : EnrProvider.WELL_KNOWN_ENDPOINTS) {
             try {
                 java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder(
-                                java.net.URI.create(candidate + "/api/v1/health"))
+                                java.net.URI.create(candidate + "/enr/v1/health"))
                         .timeout(java.time.Duration.ofSeconds(3)).GET().build();
                 java.net.http.HttpResponse<String> response = java.net.http.HttpClient
                         .newHttpClient().send(request,

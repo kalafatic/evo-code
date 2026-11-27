@@ -45,8 +45,8 @@ class WebBaseUrlResolutionTest {
         RuntimeConnection connection = RuntimeConnection.instance();
         seed(connection, ConnectionState.READY,
                 new BackendIdentity("DCODE", "2.6.11", true, "UP", Map.of()),
-                new DCodeApiClient("http://127.0.0.1:58080"));
-        assertEquals("http://127.0.0.1:58080", connection.webBaseUrl());
+                new DCodeApiClient("http://127.0.0.1:48080"));
+        assertEquals("http://127.0.0.1:48080", connection.webBaseUrl());
     }
 
     @Test
@@ -55,7 +55,7 @@ class WebBaseUrlResolutionTest {
         RuntimeConnection connection = RuntimeConnection.instance();
         seed(connection, ConnectionState.ERROR,
                 new BackendIdentity("ENR", "1.0", false, "", Map.of()),
-                new DCodeApiClient("http://127.0.0.1:8111"));
+                new DCodeApiClient("http://127.0.0.1:28780"));
         System.setProperty(LOCAL_PORT_PROPERTY, "48082");
         assertEquals("http://127.0.0.1:48082", connection.webBaseUrl(),
                 "an unverified endpoint (ENR) must never be opened; the local DCode "
@@ -67,7 +67,7 @@ class WebBaseUrlResolutionTest {
         previousPortProperty = System.getProperty(LOCAL_PORT_PROPERTY);
         RuntimeConnection connection = RuntimeConnection.instance();
         seed(connection, ConnectionState.ERROR, null,
-                new DCodeApiClient("http://127.0.0.1:8111"));
+                new DCodeApiClient("http://127.0.0.1:28780"));
         try {
             System.clearProperty(LOCAL_PORT_PROPERTY);
             assertNull(connection.webBaseUrl(),

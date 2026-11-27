@@ -125,4 +125,15 @@
               id="eu.kalafatic.dcode.ui.editors.multi"
               name="EVO-Code Inference"/>
    </extension>
+
+   <extension point="org.eclipse.ui.splashHandlers">
+      <splashHandler
+            id="eu.kalafatic.dcode.ui.splashHandler"
+            class="eu.kalafatic.dcode.ui.splash.DCodeSplashHandler">
+      </splashHandler>
+      <splashHandlerProductBinding
+            productId="eu.kalafatic.dcode.ui.rcp"
+            splashId="eu.kalafatic.dcode.ui.splashHandler">
+      </splashHandlerProductBinding>
+   </extension>
 </plugin>

@@ -2,6 +2,8 @@ package eu.kalafatic.dcode.config.runtime;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.kalafatic.dcode.config.provider.EnrProvider;
+import eu.kalafatic.dcode.config.provider.OllamaProvider;
 import eu.kalafatic.dcode.core.log.DCodeLog;
 
 import java.net.URI;
@@ -59,11 +61,15 @@ public final class RuntimeScanner {
     }
 
     /** Default well-known local endpoints of the supported services. */
-    public static final List<String> DEFAULT_ENDPOINTS = List.of(
-            "http://127.0.0.1:58080", // DCode default API port
-            "http://127.0.0.1:8111",  // standalone ENR
-            "http://127.0.0.1:28780", // EVO-embedded ENR
-            "http://127.0.0.1:11434"); // Ollama
+    public static final List<String> DEFAULT_ENDPOINTS = buildDefaultEndpoints();
+
+    private static List<String> buildDefaultEndpoints() {
+        List<String> endpoints = new ArrayList<>();
+        endpoints.add("http://127.0.0.1:48080"); // DCode default API port
+        endpoints.addAll(EnrProvider.WELL_KNOWN_ENDPOINTS); // ENR API 28780
+        endpoints.add(OllamaProvider.DEFAULT_BASE_URL); // Ollama 11434
+        return List.copyOf(endpoints);
+    }
 
     private static final Duration TIMEOUT = Duration.ofSeconds(4);
 

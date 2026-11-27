@@ -269,7 +269,7 @@ public final class CliApplication implements IApplication {
         out.println("  help         this help");
         out.println();
         out.println("Endpoint discovery: <dataDir>/server-endpoint.json, then");
-        out.println("  dcode-config.json httpPort, then the default port 58080.");
+        out.println("  dcode-config.json httpPort, then the default port 48080.");
         out.println("Server launcher for `start`: -Ddcode.server.launcher=<path> or");
         out.println("  `dcode-headless` on PATH.");
     }

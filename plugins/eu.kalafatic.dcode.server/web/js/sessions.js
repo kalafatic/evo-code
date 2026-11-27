@@ -351,30 +351,61 @@ window.DCodeSessions = (function () {
         container.appendChild(note);
         const body = document.createElement('div');
         container.appendChild(body);
-        (async () => {
+
+        async function load() {
             try {
                 const data = await DCodeApi.get('/api/v1/sessions/' + session.id + '/changes');
                 body.innerHTML = '';
-                for (const repository of data.repositories || []) {
-                    const card = document.createElement('div');
-                    card.className = 'card';
-                    const title = document.createElement('h3');
-                    title.textContent = repository.name + ' · branch ' + repository.branch
-                        + (repository.error ? ' · error: ' + repository.error : '');
-                    card.appendChild(title);
-                    const files = document.createElement('div');
-                    files.className = 'muted mono';
-                    files.style.marginBottom = '6px';
-                    files.textContent = (repository.changedFiles || []).join(', ')
-                        || '(clean)';
-                    card.appendChild(files);
-                    card.appendChild(DCodeDiff.render(repository.diff || ''));
-                    body.appendChild(card);
+                const repositories = data.repositories || [];
+                if (repositories.length === 0) {
+                    const empty = document.createElement('div');
+                    empty.className = 'empty-note';
+                    empty.textContent = 'No repositories in this workspace.';
+                    body.appendChild(empty);
+                    return;
                 }
+                // Professional diff workspace: file explorer + viewer + totals, fed by
+                // the backend {repositories:[{name, branch, changedFiles[], diff}]} payload.
+                repositories.forEach(function (repository) {
+                    const head = document.createElement('div');
+                    head.className = 'muted mono';
+                    head.style.marginBottom = '4px';
+                    head.textContent = repository.name + ' · branch ' + repository.branch
+                        + (repository.source === 'session-tool-record' ? ' · (session tool record)' : '');
+                    body.appendChild(head);
+                    body.appendChild(DCodeDiff.renderWorkspace([repository]));
+                });
             } catch (e) {
                 DCodeApp.logConsole('error', 'changes: ' + e.message);
+                body.innerHTML = '';
+                const err = document.createElement('div');
+                err.className = 'empty-note';
+                err.textContent = 'Could not load changes: ' + e.message;
+                body.appendChild(err);
             }
-        })();
+        }
+
+        load();
+        // Keep the diff in sync with AI activity: refresh on session events.
+        let refreshTimer = null;
+        function scheduleRefresh() {
+            if (refreshTimer) clearTimeout(refreshTimer);
+            refreshTimer = setTimeout(load, 600);
+        }
+        const activityHandler = function (event) {
+            const detail = event && event.detail;
+            if (detail && detail.sessionId && detail.sessionId !== session.id) return;
+            scheduleRefresh();
+        };
+        document.addEventListener('dcode:session-activity', activityHandler);
+        const observer = new MutationObserver(function () {
+            if (!document.body.contains(container)) {
+                observer.disconnect();
+                document.removeEventListener('dcode:session-activity', activityHandler);
+                if (refreshTimer) clearTimeout(refreshTimer);
+            }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
         return container;
     }
 

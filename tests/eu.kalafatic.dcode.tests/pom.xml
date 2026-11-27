@@ -17,7 +17,7 @@
 
     <properties>
         <!-- Live-integration endpoints. Override on the command line:
-             mvn verify -Ddcode.enr.endpoint=http://127.0.0.1:8111 -Ddcode.live.model=qwen3.8-32k:latest -->
+             mvn verify -Ddcode.enr.endpoint=http://127.0.0.1:28780 -Ddcode.live.model=qwen3.8-32k:latest -->
         <dcode.enr.endpoint>http://127.0.0.1:28780</dcode.enr.endpoint>
         <dcode.live.model></dcode.live.model>
     </properties>

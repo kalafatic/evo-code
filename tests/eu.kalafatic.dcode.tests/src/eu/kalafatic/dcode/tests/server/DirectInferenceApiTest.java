@@ -388,7 +388,7 @@ class DirectInferenceApiTest {
             }
         }
         assertTrue(http != null);
-        assertEquals(58080, http.path("expectedPort").asInt());
+        assertEquals(48080, http.path("expectedPort").asInt());
         assertTrue(http.path("actualPort").asInt() > 0, "actual port must be reported");
         assertEquals("LISTENING", http.path("state").asText());
     }
