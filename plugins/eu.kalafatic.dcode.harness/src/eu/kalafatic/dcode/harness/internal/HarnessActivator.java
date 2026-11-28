@@ -17,14 +17,20 @@ import eu.kalafatic.dcode.harness.agent.AgentEngine;
 import eu.kalafatic.dcode.harness.change.ChangeManager;
 import eu.kalafatic.dcode.harness.change.InMemoryReviewService;
 import eu.kalafatic.dcode.harness.context.ContextEngine;
+import eu.kalafatic.dcode.harness.evaluation.EvaluationEngine;
 import eu.kalafatic.dcode.harness.execution.SessionExecutor;
 import eu.kalafatic.dcode.harness.orchestration.ToolCallingAgentLoop;
+import eu.kalafatic.dcode.harness.process.ExecutionService;
 import eu.kalafatic.dcode.harness.session.InMemorySessionService;
 import eu.kalafatic.dcode.harness.tool.DefaultToolRegistry;
 import eu.kalafatic.dcode.harness.tool.ToolEngine;
 import eu.kalafatic.dcode.harness.tool.ToolRegistry;
 import eu.kalafatic.dcode.harness.tools.BuildTool;
+import eu.kalafatic.dcode.harness.tools.DelegateTaskTool;
 import eu.kalafatic.dcode.harness.tools.EditFileTool;
+import eu.kalafatic.dcode.harness.tools.GitCommitTool;
+import eu.kalafatic.dcode.harness.tools.GitDiffTool;
+import eu.kalafatic.dcode.harness.tools.GitStatusTool;
 import eu.kalafatic.dcode.harness.tools.ListFilesTool;
 import eu.kalafatic.dcode.harness.tools.ReadFileTool;
 import eu.kalafatic.dcode.harness.tools.SearchTool;
@@ -54,6 +60,7 @@ public final class HarnessActivator implements BundleActivator {
     private ServiceRegistration<SessionExecutor> sessionExecutorRegistration;
     private ServiceRegistration<ReviewService> reviewServiceRegistration;
     private ServiceRegistration<ToolEngine> toolEngineRegistration;
+    private ServiceRegistration<ExecutionService> executionServiceRegistration;
     private ServiceRegistration<eu.kalafatic.dcode.harness.registry.HarnessRegistry>
             harnessRegistryRegistration;
     private DynamicServiceLookup services;
@@ -118,25 +125,47 @@ public final class HarnessActivator implements BundleActivator {
         };
 
         DefaultToolRegistry toolRegistry = new DefaultToolRegistry();
+        // One shared execution service: process lifecycle is a single authority and tools
+        // are stateless adapters over it (no per-session mutable process state). The audit
+        // service is resolved lazily so the persistence bundle's registration order does
+        // not matter.
+        java.util.function.Supplier<eu.kalafatic.dcode.core.service.ExecutionAuditService>
+                auditSupplier = () -> services.get(
+                        eu.kalafatic.dcode.core.service.ExecutionAuditService.class);
+        ExecutionService executionService = new ExecutionService(
+                ExecutionService.DEFAULT_MAX_OUTPUT_CHARS, auditSupplier);
         toolRegistry.register(new ListFilesTool());
         toolRegistry.register(new ReadFileTool());
         toolRegistry.register(new WriteFileTool());
         toolRegistry.register(new EditFileTool());
         toolRegistry.register(new SearchTool());
-        toolRegistry.register(new ShellTool());
-        toolRegistry.register(new BuildTool());
-        toolRegistry.register(new TestTool());
+        toolRegistry.register(new ShellTool(executionService));
+        toolRegistry.register(new BuildTool(executionService));
+        toolRegistry.register(new TestTool(executionService));
+        toolRegistry.register(new GitStatusTool());
+        toolRegistry.register(new GitDiffTool());
+        toolRegistry.register(new GitCommitTool());
 
-        ToolEngine toolEngine = new ToolEngine(toolRegistry, eventBus);
-        AgentEngine agentEngine = new AgentEngine(eventBus);
+        ToolEngine toolEngine = new ToolEngine(toolRegistry, eventBus, auditSupplier);
+        AgentEngine agentEngine = new AgentEngine(eventBus, auditSupplier);
         ContextEngine contextEngine = new ContextEngine(repositoryOperations);
         ToolCallingAgentLoop agentLoop = new ToolCallingAgentLoop(providerRegistry,
                 toolEngine, toolRegistry, contextEngine, fallbackSessionService);
-        ChangeManager changeManager = new ChangeManager(repositoryOperations, toolEngine);
+        toolRegistry.register(new DelegateTaskTool(providerRegistry, modelRouter, agentLoop,
+                agentEngine, eventBus, sessionSupplier));
+        ChangeManager changeManager = new ChangeManager(repositoryOperations, toolEngine,
+                () -> services.get(
+                        eu.kalafatic.dcode.core.service.ChangeSetService.class));
         SessionExecutor sessionExecutor = new SessionExecutor(sessionSupplier,
                 workspaceSupplier, reviewSupplier, providerRegistry, modelRouter,
                 repositoryOperations, gitAccounts, agentEngine, agentLoop, changeManager,
                 eventBus);
+        sessionExecutor.setVerificationSupplier(() -> services.get(
+                eu.kalafatic.dcode.core.service.VerificationService.class));
+        sessionExecutor.setProcessSupplier(() -> services.get(
+                eu.kalafatic.dcode.core.service.ProcessService.class));
+        sessionExecutor.setEvaluationEngine(new EvaluationEngine(providerRegistry,
+                modelRouter));
 
         toolRegistryRegistration = context.registerService(ToolRegistry.class,
                 toolRegistry, null);
@@ -146,6 +175,9 @@ public final class HarnessActivator implements BundleActivator {
         // web interface; tools are never executed outside this engine.
         toolEngineRegistration = context.registerService(ToolEngine.class,
                 toolEngine, null);
+        // Expose the process-execution authority for API observability (list/cancel).
+        executionServiceRegistration = context.registerService(ExecutionService.class,
+                executionService, null);
         harnessRegistryRegistration = context.registerService(
                 eu.kalafatic.dcode.harness.registry.HarnessRegistry.class,
                 new eu.kalafatic.dcode.harness.registry.DefaultHarnessRegistry(
@@ -188,6 +220,9 @@ public final class HarnessActivator implements BundleActivator {
         if (toolEngineRegistration != null) {
             toolEngineRegistration.unregister();
         }
+        if (executionServiceRegistration != null) {
+            executionServiceRegistration.unregister();
+        }
         if (harnessRegistryRegistration != null) {
             harnessRegistryRegistration.unregister();
         }
@@ -202,6 +237,7 @@ public final class HarnessActivator implements BundleActivator {
         sessionExecutorRegistration = null;
         reviewServiceRegistration = null;
         toolEngineRegistration = null;
+        executionServiceRegistration = null;
         harnessRegistryRegistration = null;
         fallbackSessionService = null;
     }

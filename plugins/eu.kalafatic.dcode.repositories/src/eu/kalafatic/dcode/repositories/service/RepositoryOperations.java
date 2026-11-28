@@ -40,6 +40,11 @@ public final class RepositoryOperations {
         return engine.changedFiles(resolveDir(workspace, repository));
     }
 
+    /** Per-file working-tree changes with status and unified diff (read-only safe). */
+    public List<GitEngine.Change> changes(Workspace workspace, RepositoryRef repository) {
+        return engine.changes(resolveDir(workspace, repository));
+    }
+
     public String diff(Workspace workspace, RepositoryRef repository) {
         return engine.diff(resolveDir(workspace, repository));
     }

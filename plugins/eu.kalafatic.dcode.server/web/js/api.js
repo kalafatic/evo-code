@@ -6,7 +6,7 @@ window.DCodeApi = (function () {
     const base = location.origin;
     // Frontend revision — visible in the UI, logged at boot and asserted by the
     // backend `/api/v1/health` frontendVersion field (FrontendDeliveryTest).
-    window.DCODE_FRONTEND_BUILD = 'web-20261124-r5';
+    window.DCODE_FRONTEND_BUILD = 'web-20261127-r7';
     // Shared with settings.html so one sign-in covers both pages of the same
     // browser (mirrors the DStudio web client's dstudio.web.token behavior).
     const TOKEN_KEY = 'dcode.web.token';

@@ -77,6 +77,10 @@ class EventsRecoveryAndSecretsTest {
                 "done", ws.id(), null, null, null, null));
         sessions.transition(completed.getId(), SessionState.RUNNING);
         sessions.transition(completed.getId(), SessionState.COMPLETED);
+        var pendingApproval = sessions.createSession(new eu.kalafatic.dcode.core.service.SessionService.CreateSessionRequest(
+                "awaiting review", ws.id(), null, null, null, null));
+        sessions.transition(pendingApproval.getId(), SessionState.RUNNING);
+        sessions.transition(pendingApproval.getId(), SessionState.WAITING_FOR_APPROVAL);
 
         new SessionRecoveryService(sessions, workspaces).recover();
 
@@ -86,6 +90,9 @@ class EventsRecoveryAndSecretsTest {
                 sessions.getSession(suspended.getId()).orElseThrow().getState());
         assertEquals(SessionState.COMPLETED,
                 sessions.getSession(completed.getId()).orElseThrow().getState());
+        // A pending human approval must survive restart unchanged.
+        assertEquals(SessionState.WAITING_FOR_APPROVAL,
+                sessions.getSession(pendingApproval.getId()).orElseThrow().getState());
     }
 
     @Test

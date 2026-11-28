@@ -38,33 +38,8 @@ public final class JavaToolingActivator implements BundleActivator {
     public void start(BundleContext context) {
         this.context = context;
         gate = new ServiceAvailabilityGate(context, new Class<?>[]{
-                ToolRegistry.class, DCodeLifecycle.class}, this::eclipseWorkspaceReady, this::wire);
+                ToolRegistry.class, DCodeLifecycle.class}, this::wire);
         gate.runIfAvailable();
-    }
-
-    /**
-     * Additional startup condition for the Eclipse platform: JDT core can only activate
-     * after the Eclipse resources workspace has been opened (it crashes otherwise). In
-     * headless runtimes without the resources bundle the condition is satisfied trivially
-     * and {@link #wire()} degrades gracefully as before.
-     */
-    private boolean eclipseWorkspaceReady() {
-        boolean resourcesBundlePresent = false;
-        for (org.osgi.framework.Bundle bundle : context.getBundles()) {
-            if ("org.eclipse.core.resources".equals(bundle.getSymbolicName())
-                    && bundle.getState() != org.osgi.framework.Bundle.UNINSTALLED) {
-                resourcesBundlePresent = true;
-                break;
-            }
-        }
-        if (!resourcesBundlePresent) {
-            return true;
-        }
-        try {
-            return context.getServiceReference("org.eclipse.core.resources.IWorkspace") != null;
-        } catch (RuntimeException e) {
-            return true;
-        }
     }
 
     private void wire() {
@@ -74,6 +49,19 @@ public final class JavaToolingActivator implements BundleActivator {
             DCodeLifecycle lifecycle = context.getService(
                     context.getServiceReference(DCodeLifecycle.class));
             workspaceManager = new JavaWorkspaceManager();
+            // Open the Eclipse Resources + JDT workspace eagerly so the Java tools are
+            // genuinely available in headless runtimes (no SWT display, no Workbench).
+            // ensureStarted() opens the resources workspace before activating JDT Core so
+            // JDT's lazy activator cannot crash. When the resources bundle is absent this
+            // fails cleanly and the tools remain registered but report a clear diagnostic
+            // at invocation time.
+            try {
+                workspaceManager.ensureStarted();
+            } catch (Throwable e) {
+                DCodeLog.warn("java.tooling",
+                        "JDT workspace could not be initialized eagerly; tools will "
+                                + "initialize lazily: " + e.getMessage());
+            }
 
             toolRegistry.register(new JavaProjectStructureTool(workspaceManager));
             toolRegistry.register(new JavaDiagnosticsTool(workspaceManager));
@@ -111,7 +99,7 @@ public final class JavaToolingActivator implements BundleActivator {
             // Headless runtimes without an initialized Eclipse workspace cannot host
             // JDT: tool registration must never prevent the runtime from starting.
             DCodeLog.error("java.tooling",
-                    "JDT/PDE tooling unavailable in this runtime: " + e.getMessage());
+                    "JDT/PDE tooling unavailable in this runtime: " + e.getMessage(), e);
         }
     }
 

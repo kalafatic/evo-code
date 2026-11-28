@@ -28,10 +28,12 @@ class FrontendDeliveryTest {
     private static final List<String> FILES = List.of(
             "web/index.html", "web/js/api.js", "web/js/app.js", "web/js/chat.js",
             "web/js/markdown.js", "web/js/runtimes.js", "web/js/sessions.js",
+            "web/js/diff.js",
             "web/css/app.css", "web/settings.html", "web/css/settings.css",
-            "web/help.html");
+            "web/help.html",
+            "web/shared/shell.css", "web/shared/shell.js", "web/shared/shell-init.js");
 
-    private static final String BUILD = "web-20261124-r5";
+    private static final String BUILD = "web-20261127-r7";
 
     private Path sourceRoot() {
         Path module = Path.of("").toAbsolutePath();

@@ -5,5 +5,6 @@ public enum FileChangeStatus {
     ADDED,
     MODIFIED,
     DELETED,
-    RENAMED
+    RENAMED,
+    UNTRACKED
 }

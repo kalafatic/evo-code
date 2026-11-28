@@ -5,12 +5,17 @@ import eu.kalafatic.dcode.core.event.DCodeEventType;
 import eu.kalafatic.dcode.core.event.EventBus;
 import eu.kalafatic.dcode.core.event.StandardEvent;
 import eu.kalafatic.dcode.core.model.AgentRole;
+import eu.kalafatic.dcode.core.model.ChangeSet;
 import eu.kalafatic.dcode.core.model.Message;
 import eu.kalafatic.dcode.core.model.MessageRole;
 import eu.kalafatic.dcode.core.model.Session;
 import eu.kalafatic.dcode.core.model.SessionState;
+import eu.kalafatic.dcode.core.service.ChangeSetService;
+import eu.kalafatic.dcode.core.service.ExecutionAuditService;
 import eu.kalafatic.dcode.core.service.InvalidStateTransitionException;
+import eu.kalafatic.dcode.core.service.ReviewService;
 import eu.kalafatic.dcode.core.service.SessionService;
+import eu.kalafatic.dcode.core.service.VerificationService;
 import eu.kalafatic.dcode.core.service.WorkspaceService;
 import eu.kalafatic.dcode.persistence.db.SqliteDatabaseManager;
 
@@ -40,14 +45,31 @@ public final class SqliteSessionService implements SessionService {
     private final SqliteDatabaseManager database;
     private final EventBus eventBus;
     private final WorkspaceService workspaceService;
+    private final ChangeSetService changeSetService;
+    private final VerificationService verificationService;
+    private final ReviewService reviewService;
+    private final ExecutionAuditService executionAuditService;
     private final ObjectMapper mapper = new ObjectMapper();
     private final ConcurrentHashMap<String, Object> sessionLocks = new ConcurrentHashMap<>();
 
     public SqliteSessionService(SqliteDatabaseManager database, EventBus eventBus,
                                 WorkspaceService workspaceService) {
+        this(database, eventBus, workspaceService, null, null, null, null);
+    }
+
+    public SqliteSessionService(SqliteDatabaseManager database, EventBus eventBus,
+                                WorkspaceService workspaceService,
+                                ChangeSetService changeSetService,
+                                VerificationService verificationService,
+                                ReviewService reviewService,
+                                ExecutionAuditService executionAuditService) {
         this.database = Objects.requireNonNull(database, "database");
         this.eventBus = Objects.requireNonNull(eventBus, "eventBus");
         this.workspaceService = Objects.requireNonNull(workspaceService, "workspaceService");
+        this.changeSetService = changeSetService;
+        this.verificationService = verificationService;
+        this.reviewService = reviewService;
+        this.executionAuditService = executionAuditService;
     }
 
     @Override
@@ -224,6 +246,56 @@ public final class SqliteSessionService implements SessionService {
             eventBus.publish(StandardEvent.of(DCodeEventType.SESSION_DELETED, sessionId,
                     "{\"sessionId\":\"" + escapeJson(sessionId) + "\"}"));
         }
+    }
+
+    @Override
+    public Session evaluateCompletion(String sessionId) {
+        if (changeSetService == null || verificationService == null || reviewService == null) {
+            return getSession(sessionId).orElseThrow(
+                    () -> new IllegalArgumentException("Unknown session: " + sessionId));
+        }
+        Object lock = sessionLocks.computeIfAbsent(sessionId, k -> new Object());
+        synchronized (lock) {
+            Session session = getSession(sessionId).orElseThrow(
+                    () -> new IllegalArgumentException("Unknown session: " + sessionId));
+            if (session.getState() != SessionState.WAITING_FOR_APPROVAL) {
+                return session;
+            }
+            List<ChangeSet> changeSets = changeSetService.listBySession(sessionId);
+            if (changeSets.isEmpty()) {
+                return session;
+            }
+            // Latest version per repository must be APPROVED and verified.
+            for (ChangeSet latest : latestPerRepository(changeSets)) {
+                boolean approved = reviewService.reviewsOf(sessionId).stream()
+                        .filter(r -> latest.id().equals(r.changeSetId()))
+                        .anyMatch(r -> r.status() == ReviewService.Status.APPROVED);
+                if (!approved) {
+                    return session;
+                }
+                Optional<VerificationService.Verification> verification =
+                        verificationService.latestForChangeSet(latest.id());
+                boolean verified = verification.isPresent()
+                        && (verification.get().verdict() == VerificationService.Verdict.VERIFIED
+                        || verification.get().verdict()
+                                == VerificationService.Verdict.VERIFIED_WITH_LIMITATIONS);
+                if (!verified) {
+                    return session;
+                }
+            }
+            return transition(sessionId, SessionState.COMPLETED);
+        }
+    }
+
+    private static List<ChangeSet> latestPerRepository(List<ChangeSet> changeSets) {
+        Map<String, ChangeSet> latest = new HashMap<>();
+        for (ChangeSet changeSet : changeSets) {
+            ChangeSet current = latest.get(changeSet.repositoryId());
+            if (current == null || changeSet.version() > current.version()) {
+                latest.put(changeSet.repositoryId(), changeSet);
+            }
+        }
+        return new ArrayList<>(latest.values());
     }
 
     private static String escapeJson(String value) {

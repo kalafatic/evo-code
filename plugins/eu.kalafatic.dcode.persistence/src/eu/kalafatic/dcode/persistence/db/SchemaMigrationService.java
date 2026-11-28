@@ -161,5 +161,124 @@ public final class SchemaMigrationService {
                                 + "decided_at TEXT)");
                     }
                 }
+            },
+            new Migration() {
+                @Override
+                public int version() {
+                    return 2;
+                }
+
+                @Override
+                public void apply(Connection connection) throws SQLException {
+                    try (Statement s = connection.createStatement()) {
+                        s.execute("CREATE TABLE process_executions("
+                                + "id TEXT PRIMARY KEY,"
+                                + "session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,"
+                                + "agent_run_id TEXT,"
+                                + "tool_call_id TEXT,"
+                                + "command TEXT NOT NULL,"
+                                + "cwd TEXT,"
+                                + "state TEXT NOT NULL,"
+                                + "os_pid INTEGER,"
+                                + "start_instant TEXT,"
+                                + "exit_code INTEGER,"
+                                + "label TEXT,"
+                                + "started_at TEXT NOT NULL,"
+                                + "ended_at TEXT)");
+                        s.execute("CREATE INDEX idx_process_executions_session"
+                                + " ON process_executions(session_id, started_at)");
+                    }
+                }
+            },
+            new Migration() {
+                @Override
+                public int version() {
+                    return 3;
+                }
+
+                @Override
+                public void apply(Connection connection) throws SQLException {
+                    try (Statement s = connection.createStatement()) {
+                        s.execute("ALTER TABLE change_sets ADD COLUMN version INTEGER NOT NULL DEFAULT 0");
+                        s.execute("ALTER TABLE change_sets ADD COLUMN predecessor_id TEXT");
+                        s.execute("ALTER TABLE change_sets ADD COLUMN agent_run_id TEXT");
+                        s.execute("ALTER TABLE change_sets ADD COLUMN state TEXT NOT NULL DEFAULT 'FINALIZED'");
+                        s.execute("ALTER TABLE change_files ADD COLUMN old_path TEXT");
+                        s.execute("ALTER TABLE change_files ADD COLUMN diff TEXT");
+                        s.execute("CREATE TABLE verifications("
+                                + "id TEXT PRIMARY KEY,"
+                                + "session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,"
+                                + "change_set_id TEXT,"
+                                + "verdict TEXT NOT NULL,"
+                                + "evidence TEXT,"
+                                + "created_at TEXT NOT NULL)");
+                        s.execute("CREATE INDEX idx_verifications_session"
+                                + " ON verifications(session_id, created_at)");
+                        s.execute("CREATE INDEX idx_verifications_changeset"
+                                + " ON verifications(change_set_id, created_at)");
+                        s.execute("CREATE TABLE build_results("
+                                + "id TEXT PRIMARY KEY,"
+                                + "session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,"
+                                + "agent_run_id TEXT,"
+                                + "change_set_id TEXT,"
+                                + "kind TEXT NOT NULL,"
+                                + "command TEXT,"
+                                + "cwd TEXT,"
+                                + "outcome TEXT NOT NULL,"
+                                + "exit_code INTEGER,"
+                                + "tests_run INTEGER,"
+                                + "tests_failed INTEGER,"
+                                + "tests_skipped INTEGER,"
+                                + "output_ref TEXT,"
+                                + "started_at TEXT NOT NULL,"
+                                + "ended_at TEXT)");
+                        s.execute("CREATE INDEX idx_build_results_session"
+                                + " ON build_results(session_id, started_at)");
+                    }
+                }
+            },
+            new Migration() {
+                @Override
+                public int version() {
+                    return 4;
+                }
+
+                @Override
+                public void apply(Connection connection) throws SQLException {
+                    try (Statement s = connection.createStatement()) {
+                        s.execute("CREATE TABLE processes("
+                                + "id TEXT PRIMARY KEY,"
+                                + "session_id TEXT NOT NULL UNIQUE,"
+                                + "goal TEXT NOT NULL,"
+                                + "state TEXT NOT NULL,"
+                                + "understanding TEXT,"
+                                + "current_strategy_id TEXT,"
+                                + "created_at TEXT NOT NULL,"
+                                + "updated_at TEXT NOT NULL)");
+                        s.execute("CREATE TABLE strategies("
+                                + "id TEXT PRIMARY KEY,"
+                                + "process_id TEXT NOT NULL,"
+                                + "parent_strategy_id TEXT,"
+                                + "name TEXT NOT NULL,"
+                                + "rationale TEXT,"
+                                + "status TEXT NOT NULL,"
+                                + "outcome TEXT,"
+                                + "created_at TEXT NOT NULL,"
+                                + "updated_at TEXT NOT NULL)");
+                        s.execute("CREATE INDEX idx_strategies_process"
+                                + " ON strategies(process_id, created_at)");
+                        s.execute("CREATE TABLE decisions("
+                                + "id TEXT PRIMARY KEY,"
+                                + "process_id TEXT NOT NULL,"
+                                + "session_id TEXT,"
+                                + "kind TEXT NOT NULL,"
+                                + "summary TEXT NOT NULL,"
+                                + "evidence TEXT,"
+                                + "alternatives TEXT,"
+                                + "created_at TEXT NOT NULL)");
+                        s.execute("CREATE INDEX idx_decisions_process"
+                                + " ON decisions(process_id, created_at)");
+                    }
+                }
             });
 }

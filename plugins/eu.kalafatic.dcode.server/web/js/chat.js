@@ -23,16 +23,13 @@ window.DCodeChat = (function () {
     function render() {
         const root = el('div', 'chat-view');
 
-        // ---- header: title + runtime/model selectors ----
+        // ---- header: compact toolbar (title + runtime/model), mirroring EVO-Studio ----
         const header = el('div', 'chat-header');
         const title = el('div', 'chat-title');
         title.appendChild(el('span', 'chat-title-icon', '💬'));
-        const titleText = el('div', 'chat-title-text');
-        titleText.appendChild(el('div', 'chat-title-main', 'Chat with EVO-Code'));
-        titleText.appendChild(el('div', 'chat-title-sub',
-            'Ask about code, request an implementation, or explain a design. '
-            + 'Streaming response from the selected model.'));
-        title.appendChild(titleText);
+        title.appendChild(el('span', 'chat-title-main', 'Chat'));
+        title.title = 'Ask about code, request an implementation, or explain a design. '
+            + 'Streaming response from the selected model.';
         header.appendChild(title);
 
         const selectors = el('div', 'chat-selectors');
@@ -40,8 +37,8 @@ window.DCodeChat = (function () {
         runtimeSelect.title = 'Inference runtime';
         const modelSelect = el('select', 'chat-select');
         modelSelect.title = 'Model';
-        selectors.appendChild(labeled('Runtime', runtimeSelect));
-        selectors.appendChild(labeled('Model', modelSelect));
+        selectors.appendChild(field('Runtime', runtimeSelect));
+        selectors.appendChild(field('Model', modelSelect));
         const modelHint = el('div', 'chat-model-hint');
         modelHint.hidden = true;
         selectors.appendChild(modelHint);
@@ -72,24 +69,33 @@ window.DCodeChat = (function () {
         transcript.appendChild(welcome);
         root.appendChild(transcript);
 
-        // ---- composer ----
-        const composerWrap = el('div', 'chat-composer-wrap');
+        // ---- composer (shared .evo-composer* structure, identical to EVO-Studio) ----
+        const composerWrap = el('div', 'evo-composer');
+        const composerBox = el('div', 'evo-composer-box');
         const composer = el('textarea', 'chat-composer');
-        composer.rows = 3;
+        composer.rows = 2;
         composer.placeholder = 'Ask EVO-Code anything — e.g. "write a Python function '
             + 'that parses ISO dates"…';
-        composerWrap.appendChild(composer);
-        const actions = el('div', 'chat-actions');
-        const hint = el('span', 'chat-hint', 'Enter to send · Shift+Enter for newline');
-        actions.appendChild(hint);
-        const stopBtn = el('button', 'btn btn-danger chat-btn', 'Stop');
-        stopBtn.disabled = true;
-        const clearBtn = el('button', 'btn chat-btn', 'Clear');
-        const sendBtn = el('button', 'btn btn-primary chat-btn chat-send', 'Send ➤');
+        composerBox.appendChild(composer);
+
+        const bar = el('div', 'evo-composer-bar');
+        const actions = el('div', 'evo-composer-actions');
+        const clearBtn = el('button', 'btn btn-small', 'Clear');
         actions.appendChild(clearBtn);
-        actions.appendChild(stopBtn);
-        actions.appendChild(sendBtn);
-        composerWrap.appendChild(actions);
+
+        const right = el('div', 'evo-composer-right');
+        const stopBtn = el('button', 'btn btn-danger', 'Stop');
+        stopBtn.disabled = true;
+        const sendBtn = el('button', 'btn btn-primary', 'Send');
+        right.appendChild(stopBtn);
+        right.appendChild(sendBtn);
+
+        bar.appendChild(actions);
+        bar.appendChild(right);
+        composerBox.appendChild(bar);
+        composerBox.appendChild(el('div', 'evo-composer-hint',
+            'Enter to send · Shift+Enter for newline'));
+        composerWrap.appendChild(composerBox);
         root.appendChild(composerWrap);
 
         // ---- state ----
@@ -98,9 +104,9 @@ window.DCodeChat = (function () {
         let requestId = null;
         let streaming = false;
 
-        function labeled(label, control) {
-            const wrap = el('label', 'chat-select-wrap');
-            wrap.appendChild(el('span', 'chat-select-label', label));
+        function field(label, control) {
+            const wrap = el('div', 'evo-field');
+            wrap.appendChild(el('span', 'evo-field-label', label));
             wrap.appendChild(control);
             return wrap;
         }

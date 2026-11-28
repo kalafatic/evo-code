@@ -50,7 +50,7 @@ public final class DCodeApi {
 
     /** Frontend revision the web UI reports; must match web/js/api.js
      *  DCODE_FRONTEND_BUILD (asserted by FrontendDeliveryTest). */
-    public static final String FRONTEND_VERSION = "web-20261124-r5";
+    public static final String FRONTEND_VERSION = "web-20261127-r7";
 
     private final Supplier<SessionService> sessionSupplier;
     private final Supplier<WorkspaceService> workspaceSupplier;
@@ -70,6 +70,12 @@ public final class DCodeApi {
     private final java.util.function.Supplier<eu.kalafatic.dcode.harness.registry.HarnessRegistry> harnessSupplier;
     private final java.util.function.Supplier<eu.kalafatic.dcode.config.agent.AgentRegistry> agentSupplier;
     private final java.util.function.Supplier<eu.kalafatic.dcode.config.profile.ProfileRegistry> profileSupplier;
+    private java.util.function.Supplier<eu.kalafatic.dcode.core.service.ChangeSetService> changeSetSupplier =
+            () -> null;
+    private java.util.function.Supplier<eu.kalafatic.dcode.core.service.VerificationService> verificationSupplier =
+            () -> null;
+    private java.util.function.Supplier<eu.kalafatic.dcode.persistence.events.EventLog> eventLogSupplier =
+            () -> null;
     private volatile int httpPortActual;
     private volatile String httpPortBindAddress = "";
     private volatile Runnable shutdownAction;
@@ -228,6 +234,24 @@ public final class DCodeApi {
      */
     public void setShutdownAction(Runnable action) {
         this.shutdownAction = action;
+    }
+
+    /** Injects the durable change-set store for the /changesets API. */
+    public void setChangeSetSupplier(
+            java.util.function.Supplier<eu.kalafatic.dcode.core.service.ChangeSetService> supplier) {
+        this.changeSetSupplier = supplier == null ? () -> null : supplier;
+    }
+
+    /** Injects the durable verification store for the /verifications API. */
+    public void setVerificationSupplier(
+            java.util.function.Supplier<eu.kalafatic.dcode.core.service.VerificationService> supplier) {
+        this.verificationSupplier = supplier == null ? () -> null : supplier;
+    }
+
+    /** Injects the durable event log for the /events replay API. */
+    public void setEventLogSupplier(
+            java.util.function.Supplier<eu.kalafatic.dcode.persistence.events.EventLog> supplier) {
+        this.eventLogSupplier = supplier == null ? () -> null : supplier;
     }
 
     /** Opens an SSE stream for one session (or all events when sessionId is null). */
@@ -521,7 +545,98 @@ public final class DCodeApi {
             }
             return ok(array);
         }
+        if (parts.length == 4 && parts[3].equals("changesets") && method.equals("GET")) {
+            return persistedChangeSets(parts[2]);
+        }
+        if (parts.length == 4 && parts[3].equals("verifications") && method.equals("GET")) {
+            return verifications(parts[2]);
+        }
+        if (parts.length == 4 && parts[3].equals("events") && method.equals("GET")) {
+            return replayEvents(parts[2], session);
+        }
         throw new NotFoundException("Unknown route segment");
+    }
+
+    /** Durable event replay with cursor-based pagination. */
+    private String replayEvents(String sessionId, NanoHTTPD.IHTTPSession session) {
+        var eventLog = eventLogSupplier.get();
+        if (eventLog == null) {
+            throw new IllegalStateException("Event log is not available");
+        }
+        long after = parseLong(session.getParms().getOrDefault("after", "0"), 0);
+        int limit = (int) Math.min(Math.max(
+                parseLong(session.getParms().getOrDefault("limit", "50"), 50), 1), 500);
+        var events = eventLog.replay(sessionId, after, limit);
+        ObjectNode node = mapper.createObjectNode();
+        node.put("sessionId", sessionId);
+        ArrayNode array = node.putArray("events");
+        long lastSequence = after;
+        for (var event : events) {
+            ObjectNode eventNode = array.addObject();
+            eventNode.put("id", event.id());
+            eventNode.put("sessionId", event.sessionId() != null ? event.sessionId() : "");
+            eventNode.put("type", event.type());
+            eventNode.put("sequence", event.sequence());
+            eventNode.put("timestamp", event.timestamp().toString());
+            eventNode.put("data", event.dataJson() != null ? event.dataJson() : "");
+            lastSequence = event.sequence();
+        }
+        node.put("hasMore", events.size() == limit);
+        node.put("nextSequence", events.isEmpty() ? after : lastSequence + 1);
+        return ok(node);
+    }
+
+    /** Durable change sets (versions, files, diffs) of a session. */
+    private String persistedChangeSets(String sessionId) {
+        var service = changeSetSupplier.get();
+        if (service == null) {
+            throw new IllegalStateException("Change set store is not available");
+        }
+        ArrayNode array = mapper.createArrayNode();
+        for (var changeSet : service.listBySession(sessionId)) {
+            ObjectNode node = array.addObject();
+            node.put("id", changeSet.id());
+            node.put("sessionId", changeSet.sessionId());
+            node.put("repositoryId", changeSet.repositoryId());
+            node.put("summary", changeSet.summary() != null ? changeSet.summary() : "");
+            node.put("version", changeSet.version());
+            node.put("predecessorId", changeSet.predecessorId() != null
+                    ? changeSet.predecessorId() : "");
+            node.put("agentRunId", changeSet.agentRunId() != null
+                    ? changeSet.agentRunId() : "");
+            node.put("state", changeSet.state());
+            node.put("createdAt", changeSet.createdAt().toString());
+            ArrayNode files = node.putArray("files");
+            for (var file : changeSet.files()) {
+                ObjectNode fileNode = files.addObject();
+                fileNode.put("path", file.path());
+                fileNode.put("oldPath", file.oldPath() != null ? file.oldPath() : "");
+                fileNode.put("status", file.status().name());
+                fileNode.put("diff", file.diff());
+            }
+        }
+        return ok(array);
+    }
+
+    /** Durable verification records of a session. */
+    private String verifications(String sessionId) {
+        var service = verificationSupplier.get();
+        if (service == null) {
+            throw new IllegalStateException("Verification store is not available");
+        }
+        ArrayNode array = mapper.createArrayNode();
+        for (var verification : service.listBySession(sessionId)) {
+            ObjectNode node = array.addObject();
+            node.put("id", verification.id());
+            node.put("sessionId", verification.sessionId());
+            node.put("changeSetId", verification.changeSetId() != null
+                    ? verification.changeSetId() : "");
+            node.put("verdict", verification.verdict().name());
+            node.put("evidence", verification.evidence() != null
+                    ? verification.evidence() : "");
+            node.put("createdAt", verification.createdAt().toString());
+        }
+        return ok(array);
     }
 
     /**
@@ -574,6 +689,23 @@ public final class DCodeApi {
             var review = parts[3].equals("approve")
                     ? reviews.approve(parts[2], approver, comment)
                     : reviews.reject(parts[2], approver, comment);
+            SessionService sessions = sessionSupplier.get();
+            if (parts[3].equals("approve")) {
+                // Single authoritative completion decision: approval is a necessary
+                // input, not a direct completion.
+                sessions.evaluateCompletion(review.sessionId());
+            } else {
+                // Rejection sends the session back for rework (new agent run + change-set
+                // version), preserving the rejected review for audit.
+                eu.kalafatic.dcode.core.model.Session target =
+                        sessions.getSession(review.sessionId()).orElse(null);
+                if (target != null
+                        && target.getState()
+                                == eu.kalafatic.dcode.core.model.SessionState.WAITING_FOR_APPROVAL) {
+                    sessions.transition(review.sessionId(),
+                            eu.kalafatic.dcode.core.model.SessionState.RUNNING);
+                }
+            }
             return ok(reviewNode(review));
         }
         if (parts.length == 3 && method.equals("GET")) {
@@ -1018,6 +1150,14 @@ public final class DCodeApi {
     private static int parseInt(String value, int fallback) {
         try {
             return Integer.parseInt(value);
+        } catch (Exception e) {
+            return fallback;
+        }
+    }
+
+    private static long parseLong(String value, long fallback) {
+        try {
+            return Long.parseLong(value);
         } catch (Exception e) {
             return fallback;
         }

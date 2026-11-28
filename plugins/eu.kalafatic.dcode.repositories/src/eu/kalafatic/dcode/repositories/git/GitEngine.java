@@ -25,6 +25,21 @@ public interface GitEngine {
     /** Returns basic repository information. */
     RepositoryInfo info(Path repoDir) throws GitException;
 
+    /** One working-tree change with status and per-file unified diff. */
+    record Change(
+            String path,
+            String oldPath,
+            String status,
+            String diff
+    ) {
+    }
+
+    /**
+     * Returns per-file working-tree changes (added, modified, removed, missing, renamed,
+     * untracked) with their status and unified diff. Rename detection is enabled.
+     */
+    List<Change> changes(Path repoDir) throws GitException;
+
     /** Lists local branch names. */
     List<String> branches(Path repoDir) throws GitException;
 

@@ -21,6 +21,9 @@ public enum AgentRole {
     /** Test design/verification agent. */
     TESTER,
 
+    /** Independent evaluation agent: assesses progress/completion against the goal. */
+    EVALUATOR,
+
     /** Documentation agent. */
     DOCUMENTER,
 

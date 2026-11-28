@@ -115,6 +115,71 @@ public final class JGitEngine implements GitEngine {
     }
 
     @Override
+    public List<Change> changes(Path repoDir) {
+        try (Git git = open(repoDir)) {
+            Status status = git.status().call();
+            // Per-file diffs derived from the proven single-formatter full diff
+            // (HEAD vs working tree), split on "diff --git" markers.
+            java.util.Map<String, String> split = splitDiff(diff(repoDir));
+            Set<String> seen = new TreeSet<>();
+            List<Change> result = new ArrayList<>();
+            addAll(result, seen, status.getAdded(), "ADDED", split);
+            addAll(result, seen, status.getModified(), "MODIFIED", split);
+            addAll(result, seen, status.getRemoved(), "DELETED", split);
+            addAll(result, seen, status.getMissing(), "DELETED", split);
+            addAll(result, seen, status.getUntracked(), "UNTRACKED", split);
+            return result;
+        } catch (Exception e) {
+            throw new GitException("Failed to compute changes of " + repoDir, e);
+        }
+    }
+
+    private static java.util.Map<String, String> splitDiff(String full) {
+        java.util.Map<String, String> map = new java.util.LinkedHashMap<>();
+        StringBuilder current = null;
+        String currentPath = null;
+        for (String line : full.split("\n", -1)) {
+            if (line.startsWith("diff --git ")) {
+                if (currentPath != null) {
+                    map.put(currentPath, current.toString());
+                }
+                current = new StringBuilder(line);
+                currentPath = newPath(line);
+            } else if (current != null) {
+                current.append('\n').append(line);
+            }
+        }
+        if (currentPath != null) {
+            map.put(currentPath, current.toString());
+        }
+        return map;
+    }
+
+    /** Extracts the new path from a {@code diff --git a/<path> b/<path>} header. */
+    private static String newPath(String header) {
+        int b = header.indexOf(" b/", header.indexOf(" a/") + 3);
+        if (b < 0) {
+            return header.substring("diff --git ".length());
+        }
+        String path = header.substring(b + 3);
+        // Unquote when JGit quoted the path.
+        if (path.startsWith("\"") && path.endsWith("\"")) {
+            path = path.substring(1, path.length() - 1);
+        }
+        return path;
+    }
+
+    private static void addAll(List<Change> result, Set<String> seen, Set<String> paths,
+                               String status, java.util.Map<String, String> diffs) {
+        for (String path : paths) {
+            if (!seen.add(path)) {
+                continue;
+            }
+            result.add(new Change(path, null, status, diffs.getOrDefault(path, "")));
+        }
+    }
+
+    @Override
     public List<String> log(Path repoDir, int maxCount) {
         try (Git git = open(repoDir)) {
             Repository repo = git.getRepository();

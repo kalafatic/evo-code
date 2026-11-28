@@ -79,10 +79,19 @@ public final class JavaWorkspaceManager {
                 return;
             }
             try {
+                // A headless runtime has no `-data` argument: give the Resources
+                // workspace a stable instance location under the DCode home before the
+                // resources bundle starts. Without this, ResourcesPlugin.getWorkspace()
+                // throws "Workspace is already closed or not ready yet".
+                ensureInstanceLocation();
+                // Open the Eclipse resources workspace BEFORE activating JDT Core:
+                // JDT's JavaCore.start() (lazy) requires a ready workspace (it creates a
+                // WorkspaceJob). Starting JDT first crashes with "Workspace is already
+                // closed or not ready yet".
                 startBundle("org.eclipse.core.resources");
+                ResourcesPlugin.getWorkspace().getRoot();
                 startBundle("org.eclipse.core.jobs");
                 startBundle("org.eclipse.jdt.core");
-                ResourcesPlugin.getWorkspace().getRoot();
                 started = true;
                 DCodeLog.info("java.tooling", "Eclipse JDT workspace started (headless)");
             } catch (Exception e) {
@@ -99,6 +108,21 @@ public final class JavaWorkspaceManager {
         }
         if (bundle.getState() != Bundle.ACTIVE && bundle.getState() != Bundle.STARTING) {
             bundle.start(Bundle.START_TRANSIENT);
+        }
+    }
+
+    /** Sets the instance location under the DCode home when none is configured. */
+    private static void ensureInstanceLocation() {
+        try {
+            var instanceLocation = org.eclipse.core.runtime.Platform.getInstanceLocation();
+            if (instanceLocation != null && !instanceLocation.isSet()) {
+                String home = System.getProperty("dcode.home",
+                        System.getProperty("user.home", ".") + "/.dcode");
+                java.net.URL url = java.nio.file.Path.of(home, "workspace").toUri().toURL();
+                instanceLocation.set(url, false);
+            }
+        } catch (Exception e) {
+            // Leave unset; ResourcesPlugin.getWorkspace() reports the definitive error.
         }
     }
 

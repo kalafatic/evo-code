@@ -8,6 +8,7 @@ import eu.kalafatic.dcode.core.event.StandardEvent;
 import eu.kalafatic.dcode.core.model.ExecutionState;
 import eu.kalafatic.dcode.core.model.SessionState;
 import eu.kalafatic.dcode.core.model.ToolCall;
+import eu.kalafatic.dcode.core.service.ExecutionAuditService;
 
 import java.nio.file.Path;
 import java.time.Instant;
@@ -30,14 +31,25 @@ public final class ToolEngine {
 
     private final ToolRegistry registry;
     private final EventBus eventBus;
+    private final java.util.function.Supplier<ExecutionAuditService> audit;
     private final ObjectMapper mapper = new ObjectMapper();
     private final ConcurrentHashMap<String, Tool> runningTools = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, ToolCall> calls = new ConcurrentHashMap<>();
     private final AtomicLong sequence = new AtomicLong();
 
     public ToolEngine(ToolRegistry registry, EventBus eventBus) {
+        this(registry, eventBus, (ExecutionAuditService) null);
+    }
+
+    public ToolEngine(ToolRegistry registry, EventBus eventBus, ExecutionAuditService audit) {
+        this(registry, eventBus, audit == null ? () -> null : () -> audit);
+    }
+
+    public ToolEngine(ToolRegistry registry, EventBus eventBus,
+                      java.util.function.Supplier<ExecutionAuditService> audit) {
         this.registry = Objects.requireNonNull(registry, "registry");
         this.eventBus = Objects.requireNonNull(eventBus, "eventBus");
+        this.audit = audit == null ? () -> null : audit;
     }
 
     /** Executes one tool invocation synchronously. */
@@ -58,11 +70,18 @@ public final class ToolEngine {
                 argsJson, "", ExecutionState.RUNNING, null, Instant.now(), null);
         calls.put(callId, started);
         runningTools.put(context.session().getId(), tool);
+        record(started);
         publish(DCodeEventType.TOOL_CALL_STARTED, context, callId, toolName, argsJson);
 
         ToolResult result;
         try {
-            result = tool.execute(context, arguments);
+            // Inject the tool-call correlation so process-executing tools can record
+            // which call (and agent run) spawned them.
+            ToolContext effectiveContext = new ToolContext(context.session(),
+                    context.workspace(), context.workspaceRoot(), context.repositories(),
+                    context.gitAccounts(), context.cancellationRequested(), context.log(),
+                    callId, context.agentRunId());
+            result = tool.execute(effectiveContext, arguments);
         } catch (Throwable t) {
             result = ToolResult.failure(t.getClass().getSimpleName() + ": " + t.getMessage());
         } finally {
@@ -74,6 +93,7 @@ public final class ToolEngine {
                 : ExecutionState.FAILED,
                 result.success() ? null : result.error(), started.startedAt(), Instant.now());
         calls.put(callId, completed);
+        record(completed);
         publish(DCodeEventType.TOOL_CALL_COMPLETED, context, callId, toolName,
                 toJson(result));
         return completed;
@@ -138,8 +158,20 @@ public final class ToolEngine {
                 definition.name(), toJson(arguments), "", ExecutionState.FAILED, error,
                 Instant.now(), Instant.now());
         calls.put(callId, call);
+        record(call);
         publish(DCodeEventType.TOOL_CALL_COMPLETED, context, callId, definition.name(), "");
         return call;
+    }
+
+    private void record(ToolCall call) {
+        ExecutionAuditService service = audit.get();
+        if (service != null) {
+            try {
+                service.recordToolCall(call);
+            } catch (RuntimeException e) {
+                // audit persistence is best-effort; never fail a tool for it
+            }
+        }
     }
 
     private void publish(DCodeEventType type, ToolContext context, String callId,

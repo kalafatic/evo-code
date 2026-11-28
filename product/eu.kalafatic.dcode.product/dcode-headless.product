@@ -17,9 +17,11 @@
 
    <!-- Non-zero CLI exit codes must not block on an (invisible) GTK error
         dialog: launcher.suppressErrors makes the native launcher report the
-        code on stderr and exit (verified live, headless). -->
+        code on stderr and exit (verified live, headless).
+        -data gives the Eclipse Resources workspace a stable instance area so
+        JDT Core can be initialized headlessly (no SWT/Workbench). -->
    <launcherArgs>
-      <programArgs>--launcher.suppressErrors</programArgs>
+      <programArgs>--launcher.suppressErrors -data @user.home/.dcode/workspace</programArgs>
    </launcherArgs>
 
    <launcher name="dcode-headless"/>

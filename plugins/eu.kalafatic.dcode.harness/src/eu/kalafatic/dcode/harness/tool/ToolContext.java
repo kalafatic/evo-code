@@ -11,8 +11,9 @@ import java.util.function.Consumer;
 
 /**
  * Execution context handed to every tool invocation: session/workspace identity,
- * policy-enforcing repository operations, git accounts, cancellation and log sink.
- * Tools must never bypass these services to reach the filesystem.
+ * policy-enforcing repository operations, git accounts, cancellation and log sink, plus
+ * optional correlation to the owning tool call and agent run. Tools must never bypass
+ * these services to reach the filesystem.
  */
 public record ToolContext(
         Session session,
@@ -21,8 +22,18 @@ public record ToolContext(
         RepositoryOperations repositories,
         GitAccountManager gitAccounts,
         BooleanSupplier cancellationRequested,
-        Consumer<String> log
+        Consumer<String> log,
+        String toolCallId,
+        String agentRunId
 ) {
+    /** Backward-compatible constructor without run/tool correlation. */
+    public ToolContext(Session session, Workspace workspace, Path workspaceRoot,
+                       RepositoryOperations repositories, GitAccountManager gitAccounts,
+                       BooleanSupplier cancellationRequested, Consumer<String> log) {
+        this(session, workspace, workspaceRoot, repositories, gitAccounts,
+                cancellationRequested, log, null, null);
+    }
+
     public boolean isCancelled() {
         return cancellationRequested.getAsBoolean();
     }

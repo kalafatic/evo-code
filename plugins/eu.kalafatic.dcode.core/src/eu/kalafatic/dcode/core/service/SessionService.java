@@ -51,6 +51,17 @@ public interface SessionService {
      */
     void deleteSession(String sessionId);
 
+    /**
+     * Single authoritative completion decision. Re-evaluates a WAITING_FOR_APPROVAL
+     * session against persisted evidence (change sets, reviews, verifications) and
+     * transitions it to COMPLETED only when satisfied. The default implementation is a
+     * no-op for in-memory fallbacks; the durable implementation overrides it.
+     */
+    default Session evaluateCompletion(String sessionId) {
+        return getSession(sessionId).orElseThrow(
+                () -> new IllegalArgumentException("Unknown session: " + sessionId));
+    }
+
     /** Request payload for session creation. */
     record CreateSessionRequest(
             String title,

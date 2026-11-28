@@ -51,7 +51,7 @@ class PersistenceRoundTripTest {
     void migrationIsIdempotentAndVersioned() {
         new SchemaMigrationService(database).migrate();
         new SchemaMigrationService(database).migrate();
-        assertEquals(1, new SchemaMigrationService(database).currentVersion());
+        assertEquals(4, new SchemaMigrationService(database).currentVersion());
     }
 
     @Test

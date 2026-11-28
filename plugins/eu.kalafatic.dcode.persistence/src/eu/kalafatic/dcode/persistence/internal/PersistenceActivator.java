@@ -6,17 +6,25 @@ import eu.kalafatic.dcode.core.event.EventBus;
 import eu.kalafatic.dcode.core.lifecycle.DCodeLifecycle;
 import eu.kalafatic.dcode.core.lifecycle.LifecycleStage;
 import eu.kalafatic.dcode.core.log.DCodeLog;
+import eu.kalafatic.dcode.core.service.ChangeSetService;
+import eu.kalafatic.dcode.core.service.ExecutionAuditService;
+import eu.kalafatic.dcode.core.service.ProcessService;
 import eu.kalafatic.dcode.core.service.ReviewService;
 import eu.kalafatic.dcode.core.service.ServiceAvailabilityGate;
 import eu.kalafatic.dcode.core.service.SessionService;
+import eu.kalafatic.dcode.core.service.VerificationService;
 import eu.kalafatic.dcode.core.service.WorkspaceService;
 import eu.kalafatic.dcode.persistence.config.DurableConfigurationService;
 import eu.kalafatic.dcode.persistence.db.SchemaMigrationService;
 import eu.kalafatic.dcode.persistence.db.SqliteDatabaseManager;
 import eu.kalafatic.dcode.persistence.events.EventLog;
 import eu.kalafatic.dcode.persistence.recovery.SessionRecoveryService;
+import eu.kalafatic.dcode.persistence.service.SqliteChangeSetService;
+import eu.kalafatic.dcode.persistence.service.SqliteExecutionAuditService;
+import eu.kalafatic.dcode.persistence.service.SqliteProcessService;
 import eu.kalafatic.dcode.persistence.service.SqliteReviewService;
 import eu.kalafatic.dcode.persistence.service.SqliteSessionService;
+import eu.kalafatic.dcode.persistence.service.SqliteVerificationService;
 import eu.kalafatic.dcode.persistence.service.SqliteWorkspaceService;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -39,6 +47,11 @@ public final class PersistenceActivator implements BundleActivator {
     private ServiceRegistration<SessionService> sessionRegistration;
     private ServiceRegistration<WorkspaceService> workspaceRegistration;
     private ServiceRegistration<ReviewService> reviewRegistration;
+    private ServiceRegistration<ExecutionAuditService> auditRegistration;
+    private ServiceRegistration<ChangeSetService> changeSetRegistration;
+    private ServiceRegistration<VerificationService> verificationRegistration;
+    private ServiceRegistration<EventLog> eventLogRegistration;
+    private ServiceRegistration<ProcessService> processRegistration;
     private EventLog eventLog;
     private DurableConfigurationService durableConfig;
     private ServiceRegistration<ConfigurationService> configRegistration;
@@ -73,9 +86,18 @@ public final class PersistenceActivator implements BundleActivator {
 
             SqliteWorkspaceService workspaceService =
                     new SqliteWorkspaceService(database, eventBus);
-            SqliteSessionService sessionService =
-                    new SqliteSessionService(database, eventBus, workspaceService);
             SqliteReviewService reviewService = new SqliteReviewService(database);
+            SqliteExecutionAuditService auditService =
+                    new SqliteExecutionAuditService(database);
+            SqliteChangeSetService changeSetService =
+                    new SqliteChangeSetService(database);
+            SqliteVerificationService verificationService =
+                    new SqliteVerificationService(database);
+            SqliteProcessService processService = new SqliteProcessService(database);
+            SqliteSessionService sessionService =
+                    new SqliteSessionService(database, eventBus, workspaceService,
+                            changeSetService, verificationService, reviewService,
+                            auditService);
 
             eventLog = new EventLog(database, eventBus);
 
@@ -89,6 +111,16 @@ public final class PersistenceActivator implements BundleActivator {
                     durableConfig, highRanking);
             reviewRegistration = context.registerService(ReviewService.class,
                     reviewService, highRanking);
+            auditRegistration = context.registerService(ExecutionAuditService.class,
+                    auditService, highRanking);
+            changeSetRegistration = context.registerService(ChangeSetService.class,
+                    changeSetService, highRanking);
+            verificationRegistration = context.registerService(VerificationService.class,
+                    verificationService, highRanking);
+            eventLogRegistration = context.registerService(EventLog.class, eventLog,
+                    highRanking);
+            processRegistration = context.registerService(ProcessService.class,
+                    processService, highRanking);
 
             // Restart recovery runs only for the primary server. A transient/secondary
             // process (a CLI command, or a second DCode instance) that finds the
@@ -138,8 +170,23 @@ public final class PersistenceActivator implements BundleActivator {
         if (reviewRegistration != null) {
             reviewRegistration.unregister();
         }
+        if (auditRegistration != null) {
+            auditRegistration.unregister();
+        }
+        if (changeSetRegistration != null) {
+            changeSetRegistration.unregister();
+        }
+        if (verificationRegistration != null) {
+            verificationRegistration.unregister();
+        }
         if (eventLog != null) {
             eventLog.close();
+        }
+        if (eventLogRegistration != null) {
+            eventLogRegistration.unregister();
+        }
+        if (processRegistration != null) {
+            processRegistration.unregister();
         }
         if (database != null) {
             database.close();
@@ -151,6 +198,11 @@ public final class PersistenceActivator implements BundleActivator {
         workspaceRegistration = null;
         configRegistration = null;
         reviewRegistration = null;
+        auditRegistration = null;
+        changeSetRegistration = null;
+        verificationRegistration = null;
+        eventLogRegistration = null;
+        processRegistration = null;
         eventLog = null;
         durableConfig = null;
         database = null;

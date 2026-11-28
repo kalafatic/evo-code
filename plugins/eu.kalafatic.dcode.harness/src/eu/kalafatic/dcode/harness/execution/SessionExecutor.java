@@ -11,16 +11,22 @@ import eu.kalafatic.dcode.core.event.EventBus;
 import eu.kalafatic.dcode.core.event.StandardEvent;
 import eu.kalafatic.dcode.core.log.DCodeLog;
 import eu.kalafatic.dcode.core.model.AgentRole;
+import eu.kalafatic.dcode.core.model.ChangeSet;
 import eu.kalafatic.dcode.core.model.ExecutionState;
 import eu.kalafatic.dcode.core.model.MessageRole;
+import eu.kalafatic.dcode.core.model.Process;
 import eu.kalafatic.dcode.core.model.Session;
 import eu.kalafatic.dcode.core.model.SessionState;
+import eu.kalafatic.dcode.core.model.Strategy;
 import eu.kalafatic.dcode.core.model.Workspace;
+import eu.kalafatic.dcode.core.service.ProcessService;
 import eu.kalafatic.dcode.core.service.SessionService;
+import eu.kalafatic.dcode.core.service.VerificationService;
 import eu.kalafatic.dcode.core.service.WorkspaceService;
 import eu.kalafatic.dcode.harness.agent.AgentEngine;
 import eu.kalafatic.dcode.harness.change.ChangeManager;
 import eu.kalafatic.dcode.core.service.ReviewService;
+import eu.kalafatic.dcode.harness.evaluation.EvaluationEngine;
 import eu.kalafatic.dcode.harness.orchestration.ToolCallingAgentLoop;
 import eu.kalafatic.dcode.repositories.service.RepositoryOperations;
 
@@ -70,6 +76,37 @@ public final class SessionExecutor {
     private final ConcurrentHashMap<String, Future<?>> running = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, AtomicBoolean> cancellations = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, ModelSelection> taskOverrides = new ConcurrentHashMap<>();
+    private Supplier<VerificationService> verificationSupplier = () -> null;
+    private Supplier<eu.kalafatic.dcode.core.service.ProcessService> processSupplier =
+            () -> null;
+    private EvaluationEngine evaluationEngine;
+    private int maxReworkCycles = 2;
+
+    /** Injects the durable verification store (optional; resolved lazily). */
+    public void setVerificationSupplier(Supplier<VerificationService> supplier) {
+        this.verificationSupplier = supplier == null ? () -> null : supplier;
+    }
+
+    /**
+     * Injects the independent evaluator. When present, a completed implementation is
+     * evaluated by a separate model and, on {@code NEEDS_REWORK}, refined through a bounded
+     * evolutionary rework loop before the session can complete. When absent, the previous
+     * self-certified completion path is preserved (backward compatible).
+     */
+    public void setEvaluationEngine(EvaluationEngine engine) {
+        this.evaluationEngine = engine;
+    }
+
+    /** Bounds the number of evolutionary rework cycles (default 2). */
+    public void setMaxReworkCycles(int maxReworkCycles) {
+        this.maxReworkCycles = Math.max(0, maxReworkCycles);
+    }
+
+    /** Injects the durable process-intelligence store (optional; resolved lazily). */
+    public void setProcessSupplier(
+            Supplier<eu.kalafatic.dcode.core.service.ProcessService> supplier) {
+        this.processSupplier = supplier == null ? () -> null : supplier;
+    }
 
     public SessionExecutor(Supplier<SessionService> sessionSupplier,
                            Supplier<WorkspaceService> workspaceSupplier,
@@ -162,25 +199,42 @@ public final class SessionExecutor {
             ModelSelection selection = resolveModel(session);
             validateRuntime(selection, sessionId);
 
+            // Persistent process intelligence: the process is the authoritative
+            // (non-conversation) representation of the engineering effort.
+            eu.kalafatic.dcode.core.model.Process process = null;
+            eu.kalafatic.dcode.core.model.Strategy strategy = null;
+            eu.kalafatic.dcode.core.service.ProcessService processService =
+                    processSupplier.get();
+            if (processService != null) {
+                process = processService.ensureProcess(sessionId, task);
+                strategy = processService.recordStrategy(process.id(), null,
+                        "Initial strategy", "Single-agent execution of: " + task,
+                        eu.kalafatic.dcode.core.model.Strategy.EXECUTING);
+                processService.updateProcess(sessionId, Process.ACTIVE,
+                        "Executing with strategy", strategy.id());
+                processService.recordDecision(process.id(), sessionId, "STRATEGY_SELECTED",
+                        "Selected initial strategy for the task",
+                        "Task submitted: " + task, null);
+            }
+
             var run = agentEngine.startRun(sessionId,
                     session.getAgentRole() != null ? session.getAgentRole() : AgentRole.MAIN,
-                    selection.providerId(), selection.modelId());            Map<String, Object> services = new HashMap<>();
-            services.put("repositoryOperations", repositoryOperations);
-            if (gitAccounts != null) {
-                services.put("gitAccounts", gitAccounts);
-            }
-            services.put("sessionService", sessionService);
-            services.put("eventBus", eventBus);
+                    selection.providerId(), selection.modelId());
+            Map<String, Object> services = buildServices(run.id());
             var outcome = agentLoop.run(workspace, session, task, selection.providerId(),
                     selection.modelId(), services, cancelled::get);
 
             if (cancelled.get()) {
                 agentEngine.finishRun(run.id(), ExecutionState.CANCELLED, outcome.summary());
+                recordProcessOutcome(sessionId, processService, strategy, Process.CANCELLED,
+                        Strategy.FAILED, "Execution cancelled", outcome.summary());
                 sessionService.transition(sessionId, SessionState.CANCELLED);
                 return;
             }
             if (!outcome.success()) {
                 agentEngine.finishRun(run.id(), ExecutionState.FAILED, outcome.summary());
+                recordProcessOutcome(sessionId, processService, strategy, Process.FAILED,
+                        Strategy.FAILED, "Execution failed", outcome.summary());
                 sessionService.appendMessage(sessionId, MessageRole.ASSISTANT,
                         "[FAILED] " + outcome.summary());
                 sessionService.transition(sessionId, SessionState.FAILED);
@@ -192,18 +246,16 @@ public final class SessionExecutor {
                 return;
             }
 
-            var changeSets = changeManager.collectChanges(workspace, sessionId);
+            var changeSets = changeManager.collectChanges(workspace, sessionId, run.id());
             for (var changeSet : changeSets) {
                 reviewService.createReview(sessionId, changeSet.id());
             }
             agentEngine.finishRun(run.id(), ExecutionState.COMPLETED, outcome.summary());
-            sessionService.appendMessage(sessionId, MessageRole.ASSISTANT,
-                    "Completed: " + outcome.summary());
-            SessionState next = changeSets.isEmpty() ? SessionState.COMPLETED
-                    : SessionState.WAITING_FOR_APPROVAL;
-            sessionService.transition(sessionId, next);
-            DCodeLog.info("execution", "Session " + sessionId + " finished -> " + next
-                    + " (" + outcome.toolCalls() + " tool calls, " + outcome.iterations()
+            completeWithEvaluation(session, workspace, task, selection,
+                    session.getAgentRole() != null ? session.getAgentRole() : AgentRole.MAIN,
+                    changeSets, cancelled, processService, strategy, outcome.summary());
+            DCodeLog.info("execution", "Session " + sessionId + " execution phase complete ("
+                    + outcome.toolCalls() + " tool calls, " + outcome.iterations()
                     + " iterations)");
         } catch (Exception e) {
             DCodeLog.error("execution", "Session " + sessionId + " execution error", e);
@@ -412,6 +464,292 @@ public final class SessionExecutor {
                     + "runtime '" + providerId + "' (discovered: "
                     + models.stream().limit(5).map(ModelDefinition::id)
                     .collect(java.util.stream.Collectors.joining(", ")) + ")");
+        }
+    }
+
+    /** Builds the per-run service map the agent loop needs (reused by rework runs). */
+    private Map<String, Object> buildServices(String agentRunId) {
+        Map<String, Object> services = new HashMap<>();
+        services.put("repositoryOperations", repositoryOperations);
+        if (gitAccounts != null) {
+            services.put("gitAccounts", gitAccounts);
+        }
+        services.put("sessionService", sessionSupplier.get());
+        services.put("eventBus", eventBus);
+        services.put("agentRunId", agentRunId);
+        return services;
+    }
+
+    /**
+     * Independent evaluation + bounded evolutionary rework. With an evaluator wired, a
+     * completed implementation is assessed by a separate model; {@code NEEDS_REWORK}
+     * records the failed branch, derives a successor strategy, runs a fresh rework agent
+     * and re-evaluates (up to {@link #maxReworkCycles} cycles). Without an evaluator the
+     * previous self-certified completion is preserved exactly.
+     */
+    private void completeWithEvaluation(Session session, Workspace workspace, String task,
+            ModelSelection selection, AgentRole role, List<ChangeSet> initialChanges,
+            AtomicBoolean cancelled,
+            eu.kalafatic.dcode.core.service.ProcessService processService,
+            eu.kalafatic.dcode.core.model.Strategy initialStrategy, String initialSummary) {
+        String sessionId = session.getId();
+        SessionService sessionService = sessionSupplier.get();
+        ReviewService reviewService = reviewSupplier.get();
+        List<ChangeSet> changes = initialChanges;
+        eu.kalafatic.dcode.core.model.Strategy strategy = initialStrategy;
+        String summary = initialSummary;
+
+        if (evaluationEngine == null) {
+            VerificationService verification = verificationSupplier.get();
+            if (verification != null) {
+                for (var changeSet : changes) {
+                    verification.record(sessionId, changeSet.id(),
+                            VerificationService.Verdict.VERIFIED_WITH_LIMITATIONS,
+                            "Agent run completed; build/test evidence in tool calls and "
+                                    + "process executions");
+                }
+            }
+            sessionService.appendMessage(sessionId, MessageRole.ASSISTANT,
+                    "Completed: " + summary);
+            SessionState next = changes.isEmpty() ? SessionState.COMPLETED
+                    : SessionState.WAITING_FOR_APPROVAL;
+            recordProcessOutcome(sessionId, processService, strategy,
+                    changes.isEmpty() ? Process.COMPLETED : Process.EVALUATING,
+                    Strategy.COMPLETED, "Execution completed", summary);
+            sessionService.transition(sessionId, next);
+            return;
+        }
+
+        for (int cycle = 0; cycle <= maxReworkCycles; cycle++) {
+            EvaluationEngine.Evaluation evaluation = runEvaluation(session, task, changes,
+                    summary, selection);
+            if (evaluation.accepted()
+                    || evaluation.verdict() == EvaluationEngine.Verdict.INCONCLUSIVE) {
+                // INCONCLUSIVE (including an unavailable evaluator model) degrades to a
+                // soft acceptance with explicit limitations: the deterministic approval
+                // gate remains the backstop. It must never fail otherwise-valid work.
+                boolean inconclusive =
+                        evaluation.verdict() == EvaluationEngine.Verdict.INCONCLUSIVE;
+                recordVerification(sessionId, changes, evaluation);
+                recordDecision(processService, sessionId,
+                        inconclusive ? "EVALUATION_INCONCLUSIVE" : "EVALUATION_ACCEPTED",
+                        evaluation);
+                updateStrategy(processService, strategy, Strategy.COMPLETED,
+                        evaluation.verdict() + ": " + evaluation.findings());
+                completeAndTransition(sessionId, sessionService, changes, summary,
+                        processService, strategy);
+                return;
+            }
+            if (evaluation.needsRework() && cycle < maxReworkCycles) {
+                updateStrategy(processService, strategy, Strategy.FAILED,
+                        "rework required: " + evaluation.findings());
+                eu.kalafatic.dcode.core.model.Strategy next = deriveStrategy(processService,
+                        strategy, evaluation);
+                recordDecision(processService, sessionId, "STRATEGY_ADAPTED", evaluation);
+                sessionService.appendMessage(sessionId, MessageRole.SYSTEM,
+                        "[Rework " + (cycle + 1) + "] " + evaluation.findings() + " -> "
+                                + evaluation.recommendedAction());
+                var reworkRun = agentEngine.startRun(sessionId, role,
+                        selection.providerId(), selection.modelId());
+                var reworkOutcome = agentLoop.run(workspace, session,
+                        reworkTask(task, evaluation), selection.providerId(),
+                        selection.modelId(), buildServices(reworkRun.id()), cancelled::get);
+                if (cancelled.get()) {
+                    agentEngine.finishRun(reworkRun.id(), ExecutionState.CANCELLED,
+                            reworkOutcome.summary());
+                    updateStrategy(processService, next, Strategy.FAILED, "cancelled");
+                    sessionService.transition(sessionId, SessionState.CANCELLED);
+                    return;
+                }
+                if (!reworkOutcome.success()) {
+                    agentEngine.finishRun(reworkRun.id(), ExecutionState.FAILED,
+                            reworkOutcome.summary());
+                    updateStrategy(processService, next, Strategy.FAILED,
+                            reworkOutcome.summary());
+                    sessionService.transition(sessionId, SessionState.FAILED);
+                    return;
+                }
+                agentEngine.finishRun(reworkRun.id(), ExecutionState.COMPLETED,
+                        reworkOutcome.summary());
+                changes = changeManager.collectChanges(workspace, sessionId, reworkRun.id());
+                for (var changeSet : changes) {
+                    reviewService.createReview(sessionId, changeSet.id());
+                }
+                strategy = next;
+                summary = reworkOutcome.summary();
+                continue;
+            }
+            // FAIL / BLOCKED / INCONCLUSIVE, or the rework budget is exhausted.
+            updateStrategy(processService, strategy, Strategy.FAILED,
+                    evaluation.verdict() + ": " + evaluation.findings());
+            recordDecision(processService, sessionId, "EVALUATION_REJECTED", evaluation);
+            sessionService.appendMessage(sessionId, MessageRole.ASSISTANT,
+                    "[EVALUATION " + evaluation.verdict() + "] " + evaluation.findings());
+            sessionService.transition(sessionId, SessionState.FAILED);
+            eventBus.publish(StandardEvent.of(DCodeEventType.SYSTEM_ERROR, sessionId,
+                    "{\"message\":\"Independent evaluation rejected the result ("
+                            + evaluation.verdict() + "): " + escape(evaluation.findings())
+                            + "\"}"));
+            return;
+        }
+    }
+
+    /** Runs the independent evaluator as its own (traced) EVALUATOR agent run. */
+    private EvaluationEngine.Evaluation runEvaluation(Session session, String task,
+            List<ChangeSet> changes, String summary, ModelSelection fallback) {
+        ModelSelection selection = evaluationEngine.resolveModel(fallback);
+        var evalRun = agentEngine.startRun(session.getId(), AgentRole.EVALUATOR,
+                selection.providerId(), selection.modelId());
+        EvaluationEngine.Evidence evidence = new EvaluationEngine.Evidence(task, summary,
+                buildChangeSummary(changes));
+        EvaluationEngine.Evaluation evaluation = evaluationEngine.evaluate(evidence, fallback);
+        agentEngine.finishRun(evalRun.id(), ExecutionState.COMPLETED, evaluation.summary());
+        return evaluation;
+    }
+
+    /** Maps an independent verdict onto the persistent verification store. */
+    private void recordVerification(String sessionId, List<ChangeSet> changes,
+                                    EvaluationEngine.Evaluation evaluation) {
+        VerificationService verification = verificationSupplier.get();
+        if (verification == null) {
+            return;
+        }
+        VerificationService.Verdict verdict = switch (evaluation.verdict()) {
+            case PASS -> VerificationService.Verdict.VERIFIED;
+            case PASS_WITH_LIMITATIONS, INCONCLUSIVE ->
+                    VerificationService.Verdict.VERIFIED_WITH_LIMITATIONS;
+            case NEEDS_REWORK -> VerificationService.Verdict.NEEDS_REWORK;
+            case FAIL -> VerificationService.Verdict.FAILED;
+            case BLOCKED -> VerificationService.Verdict.BLOCKED;
+        };
+        for (var changeSet : changes) {
+            verification.record(sessionId, changeSet.id(), verdict,
+                    "Independent evaluation (" + evaluation.confidence() + "): "
+                            + evaluation.findings());
+        }
+    }
+
+    /** Terminal transition shared by the evaluated acceptance path. */
+    private void completeAndTransition(String sessionId, SessionService sessionService,
+                                       List<ChangeSet> changes, String summary,
+                                       eu.kalafatic.dcode.core.service.ProcessService processService,
+                                       eu.kalafatic.dcode.core.model.Strategy strategy) {
+        sessionService.appendMessage(sessionId, MessageRole.ASSISTANT, "Completed: " + summary);
+        SessionState next = changes.isEmpty() ? SessionState.COMPLETED
+                : SessionState.WAITING_FOR_APPROVAL;
+        if (processService != null) {
+            try {
+                processService.updateProcess(sessionId,
+                        changes.isEmpty() ? Process.COMPLETED : Process.EVALUATING, summary,
+                        strategy != null ? strategy.id() : null);
+            } catch (RuntimeException e) {
+                DCodeLog.warn("execution", "Failed to update process: " + e.getMessage());
+            }
+        }
+        sessionService.transition(sessionId, next);
+        DCodeLog.info("execution", "Session " + sessionId + " finished -> " + next);
+    }
+
+    private void updateStrategy(eu.kalafatic.dcode.core.service.ProcessService service,
+                                eu.kalafatic.dcode.core.model.Strategy strategy,
+                                String status, String outcome) {
+        if (service == null || strategy == null) {
+            return;
+        }
+        try {
+            service.updateStrategy(strategy.id(), status, outcome);
+        } catch (RuntimeException e) {
+            DCodeLog.warn("execution", "Failed to update strategy: " + e.getMessage());
+        }
+    }
+
+    private eu.kalafatic.dcode.core.model.Strategy deriveStrategy(
+            eu.kalafatic.dcode.core.service.ProcessService service,
+            eu.kalafatic.dcode.core.model.Strategy parent,
+            EvaluationEngine.Evaluation evaluation) {
+        if (service == null || parent == null) {
+            return null;
+        }
+        try {
+            return service.recordStrategy(parent.processId(), parent.id(),
+                    "Rework after " + evaluation.verdict(), evaluation.recommendedAction(),
+                    eu.kalafatic.dcode.core.model.Strategy.EXECUTING);
+        } catch (RuntimeException e) {
+            DCodeLog.warn("execution", "Failed to derive strategy: " + e.getMessage());
+            return null;
+        }
+    }
+
+    private void recordDecision(eu.kalafatic.dcode.core.service.ProcessService service,
+                                String sessionId, String kind,
+                                EvaluationEngine.Evaluation evaluation) {
+        if (service == null) {
+            return;
+        }
+        try {
+            String processId = service.getProcess(sessionId).map(p -> p.id()).orElse(null);
+            if (processId != null) {
+                service.recordDecision(processId, sessionId, kind,
+                        evaluation.verdict() + ": " + evaluation.findings(),
+                        "Evaluation evidence: " + evaluation.findings(),
+                        evaluation.recommendedAction());
+            }
+        } catch (RuntimeException e) {
+            DCodeLog.warn("execution", "Failed to record decision: " + e.getMessage());
+        }
+    }
+
+    /** Renders the change sets (with diffs) as the evaluator's evidence. */
+    private static String buildChangeSummary(List<ChangeSet> changes) {
+        if (changes == null || changes.isEmpty()) {
+            return "(no changes recorded)";
+        }
+        StringBuilder out = new StringBuilder();
+        for (ChangeSet changeSet : changes) {
+            out.append("- ").append(changeSet.summary()).append('\n');
+            for (var file : changeSet.files()) {
+                out.append("  * ").append(file.path()).append(" [").append(file.status())
+                        .append("]\n");
+                if (file.diff() != null && !file.diff().isBlank()) {
+                    out.append(file.diff()).append('\n');
+                }
+            }
+        }
+        return out.toString();
+    }
+
+    /** Frames the rework task from the evaluator's findings. */
+    private static String reworkTask(String task, EvaluationEngine.Evaluation evaluation) {
+        return "REWORK REQUESTED. Original task:\n" + task
+                + "\n\nIndependent evaluation findings:\n" + evaluation.findings()
+                + "\n\nRecommended action:\n" + evaluation.recommendedAction()
+                + "\n\nRework the implementation to address these findings, then verify.";
+    }
+
+    /**
+     * Persists the process/strategy outcome and a decision record. Best-effort: a
+     * persistence failure must never corrupt the session's execution result.
+     */
+    private void recordProcessOutcome(String sessionId,
+                                      eu.kalafatic.dcode.core.service.ProcessService service,
+                                      eu.kalafatic.dcode.core.model.Strategy strategy,
+                                      String processState, String strategyState,
+                                      String decisionKind, String outcome) {
+        if (service == null) {
+            return;
+        }
+        try {
+            String strategyId = strategy != null ? strategy.id() : null;
+            if (strategy != null) {
+                service.updateStrategy(strategy.id(), strategyState, outcome);
+            }
+            service.updateProcess(sessionId, processState, outcome, strategyId);
+            String processId = service.getProcess(sessionId)
+                    .map(p -> p.id()).orElse(null);
+            service.recordDecision(processId, sessionId, decisionKind, outcome,
+                    "Execution evidence: " + outcome, null);
+        } catch (RuntimeException e) {
+            DCodeLog.warn("execution", "Failed to record process outcome: " + e.getMessage());
         }
     }
 

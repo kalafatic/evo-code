@@ -31,13 +31,15 @@ public final class SessionRecoveryService {
         int failed = 0;
         for (var workspace : workspaceService.listWorkspaces()) {
             for (Session session : sessionService.listSessions(workspace.id())) {
-                if (session.getState() == SessionState.RUNNING
-                        || session.getState() == SessionState.WAITING_FOR_APPROVAL) {
+                // Only genuinely-in-flight RUNNING work is interrupted. WAITING_FOR_APPROVAL
+                // represents a durable pending human decision and must survive restart
+                // unchanged; its review, change set and diff are persisted.
+                if (session.getState() == SessionState.RUNNING) {
                     sessionService.appendMessage(session.getId(),
                             eu.kalafatic.dcode.core.model.MessageRole.SYSTEM,
-                            "Runtime restarted while this session was in state "
-                                    + session.getState() + "; execution state was not "
-                                    + "recoverable and the session was marked FAILED.");
+                            "Runtime restarted while this session was RUNNING; execution "
+                                    + "state was not recoverable and the session was "
+                                    + "marked FAILED.");
                     sessionService.transition(session.getId(), SessionState.FAILED);
                     failed++;
                     DCodeLog.info("recovery", "Session " + session.getId() + " was "

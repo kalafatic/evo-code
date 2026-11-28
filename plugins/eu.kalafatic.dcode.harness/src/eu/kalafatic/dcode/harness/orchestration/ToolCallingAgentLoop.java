@@ -205,7 +205,9 @@ public final class ToolCallingAgentLoop {
                                 services.get("gitAccounts"),
                         cancellationRequested,
                         message -> effectiveSessionService.appendMessage(session.getId(),
-                                MessageRole.SYSTEM, message));
+                                MessageRole.SYSTEM, message),
+                        null,
+                        (String) services.get("agentRunId"));
                 var call = toolEngine.execute(toolContext, toolName, arguments);
                 toolCalls++;
                 String toolOutput = call.errorMessage() != null

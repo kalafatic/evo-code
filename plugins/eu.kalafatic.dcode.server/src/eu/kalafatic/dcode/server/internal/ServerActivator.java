@@ -93,6 +93,12 @@ public final class ServerActivator implements BundleActivator {
                 () -> services.get(eu.kalafatic.dcode.harness.registry.HarnessRegistry.class),
                 () -> services.get(eu.kalafatic.dcode.config.agent.AgentRegistry.class),
                 () -> services.get(eu.kalafatic.dcode.config.profile.ProfileRegistry.class));
+        api.setChangeSetSupplier(() -> services.get(
+                eu.kalafatic.dcode.core.service.ChangeSetService.class));
+        api.setVerificationSupplier(() -> services.get(
+                eu.kalafatic.dcode.core.service.VerificationService.class));
+        api.setEventLogSupplier(() -> services.get(
+                eu.kalafatic.dcode.persistence.events.EventLog.class));
 
         // Graceful shutdown via POST /api/v1/server/shutdown (the thin CLI `stop`).
         api.setShutdownAction(() -> {

@@ -3,24 +3,28 @@ package eu.kalafatic.dcode.harness.change;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.kalafatic.dcode.core.model.ChangeSet;
+import eu.kalafatic.dcode.core.model.DiffHunks;
 import eu.kalafatic.dcode.core.model.FileChange;
 import eu.kalafatic.dcode.core.model.FileChangeStatus;
 import eu.kalafatic.dcode.core.model.RepositoryRef;
 import eu.kalafatic.dcode.core.model.Workspace;
+import eu.kalafatic.dcode.core.service.ChangeSetService;
+import eu.kalafatic.dcode.repositories.git.GitEngine;
 import eu.kalafatic.dcode.repositories.service.RepositoryOperations;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 /**
- * Change management: collects per-repository change sets after agent execution.
- *
- * <p>Multi-repository work yields one change set per repository with changes; there is
- * no cross-repository transaction abstraction (family rule). Workspaces that are not
- * Git repositories (plain folders) fall back to the session's own tool-call record —
- * the files the engine actually wrote — so real file effects are never lost.</p>
+ * Change management: collects and durably persists per-repository change sets after agent
+ * execution. Change sets are versioned per (session, repository); rework produces a new
+ * version without destroying prior versions. Real per-file status and unified diffs are
+ * captured; untracked and added files carry a snapshot so they remain inspectable after
+ * the working tree changes again.
  */
 public final class ChangeManager {
 
@@ -29,39 +33,67 @@ public final class ChangeManager {
 
     private final RepositoryOperations repositoryOperations;
     private final eu.kalafatic.dcode.harness.tool.ToolEngine toolEngine;
+    private final Supplier<ChangeSetService> changeSets;
 
     public ChangeManager(RepositoryOperations repositoryOperations) {
-        this(repositoryOperations, null);
+        this(repositoryOperations, null, () -> null);
     }
 
     public ChangeManager(RepositoryOperations repositoryOperations,
                          eu.kalafatic.dcode.harness.tool.ToolEngine toolEngine) {
-        this.repositoryOperations = repositoryOperations;
-        this.toolEngine = toolEngine;
+        this(repositoryOperations, toolEngine, () -> null);
     }
 
-    /** Collects change sets for all session repositories with working-tree changes. */
-    public List<ChangeSet> collectChanges(Workspace workspace, String sessionId) {
-        java.util.List<ChangeSet> result = new java.util.ArrayList<>();
+    public ChangeManager(RepositoryOperations repositoryOperations,
+                         eu.kalafatic.dcode.harness.tool.ToolEngine toolEngine,
+                         Supplier<ChangeSetService> changeSets) {
+        this.repositoryOperations = repositoryOperations;
+        this.toolEngine = toolEngine;
+        this.changeSets = changeSets == null ? () -> null : changeSets;
+    }
+
+    /** Collects and persists change sets for all session repositories with changes. */
+    public List<ChangeSet> collectChanges(Workspace workspace, String sessionId,
+                                          String agentRunId) {
+        List<ChangeSet> result = new ArrayList<>();
         for (RepositoryRef repository : workspace.repositories()) {
-            List<String> changed;
+            List<GitEngine.Change> changes;
             try {
-                changed = repositoryOperations.changedFiles(workspace, repository);
+                changes = repositoryOperations.changes(workspace, repository);
             } catch (RuntimeException gitError) {
                 // Plain-folder workspaces (no .git) or broken repositories: use the
                 // session's own tool-call record as the authoritative change list.
-                changed = sessionToolFiles(sessionId);
+                changes = fallbackChanges(sessionId);
             }
-            if (changed.isEmpty()) {
+            if (changes.isEmpty()) {
                 continue;
             }
-            List<FileChange> files = new java.util.ArrayList<>();
-            for (String path : changed) {
-                files.add(new FileChange(path, null, FileChangeStatus.MODIFIED, List.of()));
+            List<FileChange> files = new ArrayList<>();
+            for (GitEngine.Change change : changes) {
+                FileChangeStatus status = change.oldPath() != null
+                        ? FileChangeStatus.RENAMED
+                        : FileChangeStatus.valueOf(change.status());
+                files.add(new FileChange(change.path(), change.oldPath(), status,
+                        DiffHunks.parse(change.diff()), change.diff()));
             }
-            result.add(new ChangeSet(UUID.randomUUID().toString(), sessionId,
+            ChangeSet changeSet = new ChangeSet(UUID.randomUUID().toString(), sessionId,
                     repository.id(), "Changes in repository " + repository.name(), files,
-                    java.time.Instant.now()));
+                    java.time.Instant.now(), 0, null, agentRunId, "FINALIZED");
+            ChangeSetService service = changeSets.get();
+            if (service != null) {
+                changeSet = service.persist(changeSet);
+            }
+            result.add(changeSet);
+        }
+        return result;
+    }
+
+    /** Synthesized per-file changes from the session's own mutating tool calls. */
+    private List<GitEngine.Change> fallbackChanges(String sessionId) {
+        List<GitEngine.Change> result = new ArrayList<>();
+        for (String path : sessionToolFiles(sessionId)) {
+            result.add(new GitEngine.Change(path, null, "ADDED",
+                    snapshotDiff(path, sessionId)));
         }
         return result;
     }
@@ -88,6 +120,31 @@ public final class ChangeManager {
             }
         }
         return List.copyOf(files);
+    }
+
+    private String snapshotDiff(String path, String sessionId) {
+        if (toolEngine == null) {
+            return "";
+        }
+        for (eu.kalafatic.dcode.core.model.ToolCall call : toolEngine.callsOf(sessionId)) {
+            if (!"write_file".equals(call.toolName())) {
+                continue;
+            }
+            try {
+                JsonNode arguments = MAPPER.readTree(call.argumentsJson());
+                if (path.equals(arguments.path("path").asText(""))) {
+                    StringBuilder diff = new StringBuilder();
+                    diff.append("--- /dev/null\n+++ b/").append(path).append('\n');
+                    for (String line : arguments.path("content").asText("").split("\n", -1)) {
+                        diff.append('+').append(line).append('\n');
+                    }
+                    return diff.toString();
+                }
+            } catch (Exception ignored) {
+                // unparseable call: skip
+            }
+        }
+        return "";
     }
 
     private List<String> sessionToolFiles(String sessionId) {

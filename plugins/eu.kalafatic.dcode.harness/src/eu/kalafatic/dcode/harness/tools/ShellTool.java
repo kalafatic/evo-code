@@ -1,33 +1,37 @@
 package eu.kalafatic.dcode.harness.tools;
 
+import eu.kalafatic.dcode.harness.process.ExecutionService;
 import eu.kalafatic.dcode.harness.tool.Tool;
 import eu.kalafatic.dcode.harness.tool.ToolContext;
 import eu.kalafatic.dcode.harness.tool.ToolDefinition;
 import eu.kalafatic.dcode.harness.tool.ToolResult;
 import eu.kalafatic.dcode.harness.tool.ToolScope;
 
-import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Controlled shell execution inside the workspace.
  *
- * <p>Potentially destructive: recorded in the audit log with the full command. The
- * working directory is confined to the workspace; environment is sanitized; execution is
- * time-bounded and cancellable.</p>
+ * <p>Stateless: every invocation delegates to the shared {@link ExecutionService}, which
+ * owns the process, its output and its cancellation. The working directory is confined to
+ * the workspace; the environment is sanitized; execution is time-bounded and cancellable.</p>
  */
 public final class ShellTool implements Tool {
 
     private static final int DEFAULT_TIMEOUT_SECONDS = 300;
     private static final int MAX_OUTPUT_CHARS = 100_000;
 
-    private final AtomicBoolean cancelled = new AtomicBoolean();
-    private volatile Process currentProcess;
+    private final ExecutionService executions;
+
+    public ShellTool() {
+        this(new ExecutionService());
+    }
+
+    public ShellTool(ExecutionService executions) {
+        this.executions = executions;
+    }
 
     @Override
     public ToolDefinition definition() {
@@ -43,15 +47,6 @@ public final class ShellTool implements Tool {
     @Override
     public boolean supportsCancellation() {
         return true;
-    }
-
-    @Override
-    public void cancel() {
-        cancelled.set(true);
-        Process process = currentProcess;
-        if (process != null) {
-            process.destroy();
-        }
     }
 
     @Override
@@ -74,61 +69,38 @@ public final class ShellTool implements Tool {
         }
 
         context.log("shell: " + command);
-        cancelled.set(false);
-        ProcessBuilder builder = new ProcessBuilder("/bin/bash", "-c", command);
-        builder.directory(cwd.toFile());
-        builder.environment().remove("OPENAI_API_KEY");
-        builder.environment().remove("ANTHROPIC_API_KEY");
-        builder.environment().remove("GITHUB_TOKEN");
-        builder.environment().remove("GH_TOKEN");
-        builder.redirectErrorStream(true);
-
         try {
-            currentProcess = builder.start();
-            List<String> output = new ArrayList<>();
-            Thread drain = new Thread(() -> {
-                try (var reader = new java.io.BufferedReader(new java.io.InputStreamReader(
-                        currentProcess.getInputStream()))) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        output.add(line);
-                    }
-                } catch (IOException ignored) {
-                    // process died; output collected so far is enough
-                }
-            }, "dcode-shell-drain");
-            drain.start();
-
-            boolean finished = currentProcess.waitFor(timeoutSeconds, TimeUnit.SECONDS);
-            if (!finished) {
-                currentProcess.destroyForcibly();
-                return ToolResult.failure("Command timed out after " + timeoutSeconds + "s: "
-                        + command);
-            }
-            if (cancelled.get()) {
-                return ToolResult.failure("Command cancelled: " + command);
-            }
-            drain.join(5000);
-            int exitCode = currentProcess.exitValue();
-            String out = String.join("\n", output);
+            ExecutionService.Execution execution = executions.start(
+                    new ExecutionService.ExecutionSpec(
+                            List.of("/bin/bash", "-c", command),
+                            cwd, Map.of(), timeoutSeconds,
+                            context.session().getId(),
+                            context.agentRunId(),
+                            context.toolCallId(),
+                            "shell: " + command,
+                            context.cancellationRequested()));
+            ExecutionService.AwaitResult result = execution.await();
+            String out = execution.output();
             if (out.length() > MAX_OUTPUT_CHARS) {
                 out = out.substring(0, MAX_OUTPUT_CHARS) + "\n... (truncated)";
             }
-            if (exitCode != 0) {
-                return ToolResult.failure("Command exited with code " + exitCode + ": "
-                        + command + "\n" + out);
+            if (result.timedOut()) {
+                return ToolResult.failure("Command timed out after " + timeoutSeconds
+                        + "s: " + command);
+            }
+            if (result.cancelled()) {
+                return ToolResult.failure("Command cancelled: " + command);
+            }
+            if (result.exitCode() != 0) {
+                return ToolResult.failure("Command exited with code " + result.exitCode()
+                        + ": " + command + "\n" + out);
             }
             return ToolResult.ok(out.isEmpty() ? "(exit 0)" : out);
-        } catch (IOException e) {
+        } catch (java.io.IOException e) {
             return ToolResult.failure("Failed to execute command: " + e.getMessage());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            if (currentProcess != null) {
-                currentProcess.destroyForcibly();
-            }
             return ToolResult.failure("Shell execution interrupted");
-        } finally {
-            currentProcess = null;
         }
     }
 }
