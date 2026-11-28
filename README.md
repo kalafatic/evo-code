@@ -1,5 +1,5 @@
-# DCode
-### DARWIN CODER — Autonomous AI Coding Agent
+# Evo-Code
+### EVO CODER — Autonomous AI Coding Agent (Evolutionary Engineering Harness)
 
 DCode is an independent AI-powered software engineering agent designed to understand, analyze, modify, test, and validate complete software projects.
 
